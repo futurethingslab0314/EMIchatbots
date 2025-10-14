@@ -19,11 +19,15 @@ export default function Home() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [conversationStarted, setConversationStarted] = useState(false)
   const [threadId, setThreadId] = useState<string | null>(null)
+  const [showCamera, setShowCamera] = useState(false)
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const recognitionRef = useRef<any>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
     // 初始化 Web Speech API（用於即時顯示使用者語音字幕）
@@ -213,6 +217,73 @@ export default function Home() {
     setUploadedImages(prev => prev.filter((_, i) => i !== index))
   }
 
+  // 開啟相機
+  const openCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }, // 優先使用後鏡頭
+        audio: false,
+      })
+      setCameraStream(stream)
+      setShowCamera(true)
+      
+      // 等待 video 元素載入後設定串流
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+      }, 100)
+    } catch (error) {
+      console.error('無法存取相機:', error)
+      alert('無法開啟相機，請確認權限設定或使用「從相簿選擇」功能')
+    }
+  }
+
+  // 關閉相機
+  const closeCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop())
+      setCameraStream(null)
+    }
+    setShowCamera(false)
+  }
+
+  // 拍照
+  const takePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current
+      const canvas = canvasRef.current
+      
+      // 設定 canvas 尺寸與 video 相同
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      
+      // 將當前畫面繪製到 canvas
+      const context = canvas.getContext('2d')
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height)
+        
+        // 轉換為 base64
+        const imageData = canvas.toDataURL('image/jpeg', 0.8)
+        
+        // 添加到已上傳的圖片
+        setUploadedImages(prev => [...prev, imageData])
+        
+        // 關閉相機
+        closeCamera()
+      }
+    }
+  }
+
+  // 清理：組件卸載時關閉相機
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop())
+      }
+    }
+  }, [cameraStream])
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       <div className="max-w-4xl mx-auto">
@@ -251,21 +322,17 @@ export default function Home() {
             </label>
 
             {/* 使用相機拍照 */}
-            <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all">
+            <button
+              onClick={openCamera}
+              className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all"
+            >
               <svg className="w-10 h-10 mb-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               <p className="text-sm font-semibold text-gray-700">拍照</p>
               <p className="text-xs text-gray-500">使用相機拍攝</p>
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                capture="environment"
-                onChange={handleImageUpload}
-              />
-            </label>
+            </button>
           </div>
           
           <p className="text-xs text-gray-500 text-center">
@@ -295,6 +362,48 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* 相機模態視窗 */}
+        {showCamera && (
+          <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+            <div className="relative w-full h-full max-w-4xl max-h-screen p-4">
+              {/* 關閉按鈕 */}
+              <button
+                onClick={closeCamera}
+                className="absolute top-8 right-8 z-10 bg-red-500 text-white rounded-full p-3 hover:bg-red-600 transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* 相機預覽 */}
+              <div className="flex flex-col items-center justify-center h-full">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="max-w-full max-h-[70vh] rounded-lg shadow-2xl"
+                />
+                
+                {/* 拍照按鈕 */}
+                <button
+                  onClick={takePhoto}
+                  className="mt-6 bg-white text-gray-800 rounded-full p-6 hover:bg-gray-100 transition-all shadow-lg"
+                >
+                  <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                  </svg>
+                </button>
+                
+                <p className="mt-4 text-white text-sm">點擊圓形按鈕拍照</p>
+              </div>
+
+              {/* 隱藏的 canvas 用於捕捉畫面 */}
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+          </div>
+        )}
 
         {/* 對話歷史 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 min-h-[300px] max-h-[400px] overflow-y-auto">
