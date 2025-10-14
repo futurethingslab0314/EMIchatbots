@@ -17,6 +17,7 @@ type ConversationStage =
   | 'confirm-summary'  // 確認設計重點
   | 'generate-pitch'   // 生成 3 分鐘 pitch
   | 'practice-pitch'   // 學生練習 pitch
+  | 'practice-again'   // 練習完成後的選擇
   | 'evaluation'       // Bot 評分
   | 'keywords'         // 生成關鍵字筆記
 
@@ -320,6 +321,11 @@ export default function Home() {
         startRecording()
         break
       
+      case 'practice-again':
+        // 重新練習 pitch → 啟動錄音
+        startRecording()
+        break
+      
       case 'evaluation':
         // 生成關鍵字提點
         await triggerStageAction('keywords')
@@ -422,6 +428,7 @@ export default function Home() {
       'confirm-summary': '確認設計重點',
       'generate-pitch': '生成 Pitch 稿',
       'practice-pitch': '練習 Pitch',
+      'practice-again': '練習完成選擇',
       'evaluation': '評分與回饋',
       'keywords': '關鍵字筆記',
     }
@@ -437,6 +444,7 @@ export default function Home() {
       'confirm-summary': '確認後點擊上方按鈕',
       'generate-pitch': '等待 Pitch 生成...',
       'practice-pitch': '🎤 語音練習 Pitch',
+      'practice-again': '選擇再次練習或生成筆記',
       'evaluation': '等待評分...',
       'keywords': '查看關鍵字筆記',
     }
@@ -615,24 +623,63 @@ export default function Home() {
                 )}
 
                 {/* 階段 7: 語音練習 Pitch */}
-                {currentStage === 'practice-pitch' && (
+                {currentStage === 'practice-pitch' && !isRecording && (
                   <>
                     <button
-                      onClick={isRecording ? stopRecording : handleStageButton}
+                      onClick={handleStageButton}
                       disabled={isProcessing || isSpeaking}
-                      className={`px-8 py-4 rounded-full font-semibold text-lg transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 ${
-                        isRecording 
-                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white recording-pulse' 
-                          : 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 animate-pulse'
-                      }`}
+                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
                     >
-                      {isRecording ? '🔴 停止錄音' : '🎤 語音練習 Pitch'}
+                      🎤 開始語音練習 Pitch
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      {isRecording 
-                        ? '正在錄音中... 說完後點擊按鈕停止錄音' 
-                        : '準備好後，點擊開始朗讀剛才生成的 pitch'
-                      }
+                      準備好後，點擊開始朗讀剛才生成的 pitch
+                    </p>
+                  </>
+                )}
+
+                {/* 練習 Pitch 錄音中狀態 */}
+                {currentStage === 'practice-pitch' && isRecording && (
+                  <>
+                    <button
+                      onClick={stopRecording}
+                      disabled={isProcessing || isSpeaking}
+                      className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-8 py-4 rounded-full font-semibold text-lg recording-pulse transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                    >
+                      🔴 停止錄音
+                    </button>
+                    <p className="text-sm text-gray-500 mt-2">
+                      正在錄音中... 說完後點擊按鈕停止錄音
+                    </p>
+                  </>
+                )}
+
+                {/* 練習完成後 - 兩個選擇按鈕 */}
+                {currentStage === 'practice-again' && (
+                  <>
+                    <div className="flex space-x-4 justify-center">
+                      <button
+                        onClick={() => {
+                          setCurrentStage('practice-pitch')
+                          startRecording()
+                        }}
+                        disabled={isProcessing || isSpeaking}
+                        className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                      >
+                        🔄 再次練習 Pitch
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await triggerStageAction('evaluation')
+                        }}
+                        disabled={isProcessing || isSpeaking}
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                      >
+                        📝 生成關鍵字提點
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2 text-center">
+                      可以再次練習或直接生成關鍵字筆記
                     </p>
                   </>
                 )}
@@ -862,20 +909,24 @@ export default function Home() {
               <span>4. 確認設計重點 → 點擊「確認生成 3 分鐘 Pitch」</span>
             </div>
             <div className={`flex items-center ${currentStage === 'practice-pitch' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2">{currentStage === 'practice-pitch' ? '▶️' : ['evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
+              <span className="mr-2">{currentStage === 'practice-pitch' ? '▶️' : ['practice-again', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
               <span>5. 🎤 語音練習 Pitch</span>
+            </div>
+            <div className={`flex items-center ${currentStage === 'practice-again' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2">{currentStage === 'practice-again' ? '▶️' : ['evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
+              <span>6. 查看評分 → 選擇「再次練習」或「生成關鍵字提點」</span>
             </div>
             <div className={`flex items-center ${currentStage === 'evaluation' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2">{currentStage === 'evaluation' ? '▶️' : currentStage === 'keywords' ? '✓' : '○'}</span>
-              <span>6. 查看評分 → 點擊「生成關鍵字提點」</span>
+              <span>7. 生成關鍵字筆記</span>
             </div>
             <div className={`flex items-center ${currentStage === 'keywords' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2">{currentStage === 'keywords' ? '▶️' : '○'}</span>
-              <span>7. 📝 查看關鍵字筆記 → 複製筆記或重新開始</span>
+              <span>8. 📝 查看關鍵字筆記 → 複製筆記或重新開始</span>
             </div>
             <div className="flex items-center">
               <span className="mr-2">🔄</span>
-              <span>8. 點擊「重新上傳新作品」→ 重新開始完整流程</span>
+              <span>9. 點擊「重新上傳新作品」→ 重新開始完整流程</span>
             </div>
           </div>
         </div>
