@@ -309,6 +309,11 @@ export default function Home() {
         setGeneratedPitch(pitch)
       }
 
+      // 提取評分數據（當進入 evaluation 階段時）
+      if (stage === 'evaluation' || nextStage === 'evaluation') {
+        extractScoresFromResponse(reply)
+      }
+
       // 播放語音
       if (audioUrl) {
         await playAudioWithSubtitles(audioUrl, reply)
@@ -498,6 +503,9 @@ export default function Home() {
   // 從 AI 回應中提取評分數據
   const extractScoresFromResponse = (response: string) => {
     try {
+      console.log('🔍 開始解析評分數據...')
+      console.log('📝 AI 回應內容:', response)
+      
       // 嘗試解析評分（尋找數字格式）
       const originalityMatch = response.match(/Originality[：:]\s*(\d+)/i) || response.match(/原創性[）：]*\s*(\d+)/)
       const pronunciationMatch = response.match(/Pronunciation[：:]\s*(\d+)/i) || response.match(/發音[清晰度）：]*\s*(\d+)/)
@@ -505,17 +513,29 @@ export default function Home() {
       const contentMatch = response.match(/Content Delivery[：:]\s*(\d+)/i) || response.match(/內容表達[）：]*\s*(\d+)/)
       const timeMatch = response.match(/Time Management[：:]\s*(\d+)/i) || response.match(/時間[掌控）：]*\s*(\d+)/)
 
+      console.log('🎯 匹配結果:', {
+        originality: originalityMatch?.[1],
+        pronunciation: pronunciationMatch?.[1],
+        engaging: engagingMatch?.[1],
+        content: contentMatch?.[1],
+        time: timeMatch?.[1]
+      })
+
       if (originalityMatch && pronunciationMatch && engagingMatch && contentMatch && timeMatch) {
-        setEvaluationScores({
+        const scores = {
           originality: parseInt(originalityMatch[1]),
           pronunciation: parseInt(pronunciationMatch[1]),
           engagingTone: parseInt(engagingMatch[1]),
           contentDelivery: parseInt(contentMatch[1]),
           timeManagement: parseInt(timeMatch[1]),
-        })
+        }
+        console.log('✅ 成功解析評分:', scores)
+        setEvaluationScores(scores)
+      } else {
+        console.warn('⚠️ 無法解析完整的評分數據')
       }
     } catch (error) {
-      console.error('解析評分時發生錯誤:', error)
+      console.error('❌ 解析評分時發生錯誤:', error)
     }
   }
 
@@ -525,7 +545,7 @@ export default function Home() {
         {/* 標題 */}
         <div className="text-center mb-8 pt-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            3-MinuteDesign Pitch Coach
+            3-Minute Design Pitch Coach
           </h1>
           <p className="text-gray-600">
             語音對話式設計作品 Pitch 練習平台

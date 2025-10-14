@@ -167,7 +167,7 @@ body {
 
   /* 再次練習按鈕 */
   .btn-practice-again {
-    @apply btn-small btn-blue-cyan;
+    @apply btn-square btn-blue-cyan;
   }
 
   /* 生成關鍵字按鈕 */
