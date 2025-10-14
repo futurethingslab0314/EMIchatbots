@@ -533,11 +533,11 @@ export default function Home() {
                 )}
 
                 {/* 階段 2: 自由分享 */}
-                {currentStage === 'intro' && !isRecording && !isSpeaking && (
+                {currentStage === 'intro' && (
                   <>
                     <button
                       onClick={handleStageButton}
-                      disabled={isProcessing}
+                      disabled={isProcessing || isSpeaking || isRecording}
                       className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
                       🎤 自由分享
@@ -548,12 +548,22 @@ export default function Home() {
                   </>
                 )}
 
+                {/* 階段 3: 自由描述完成後 */}
+                {currentStage === 'free-describe' && (
+                  <>
+                    <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-4">
+                      <p className="text-gray-600 font-medium">🎤 自由分享已完成</p>
+                      <p className="text-sm text-gray-500 mt-1">等待 AI 處理並提出問題...</p>
+                    </div>
+                  </>
+                )}
+
                 {/* 階段 4: 回答問題/增加細節 */}
-                {currentStage === 'qa-improve' && !isRecording && !isSpeaking && (
+                {currentStage === 'qa-improve' && (
                   <>
                     <button
                       onClick={handleStageButton}
-                      disabled={isProcessing}
+                      disabled={isProcessing || isSpeaking || isRecording}
                       className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
                       🎤 回答問題/增加細節
@@ -565,11 +575,11 @@ export default function Home() {
                 )}
 
                 {/* 階段 5: 確認生成 Pitch */}
-                {currentStage === 'confirm-summary' && !isSpeaking && (
+                {currentStage === 'confirm-summary' && (
                   <>
                     <button
                       onClick={handleStageButton}
-                      disabled={isProcessing}
+                      disabled={isProcessing || isSpeaking}
                       className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
                       ✅ 確認生成 3 分鐘 Pitch
@@ -580,12 +590,22 @@ export default function Home() {
                   </>
                 )}
 
+                {/* 階段 6: Pitch 已生成 */}
+                {currentStage === 'generate-pitch' && (
+                  <>
+                    <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4">
+                      <p className="text-green-600 font-medium">✅ Pitch 已生成完成</p>
+                      <p className="text-sm text-gray-500 mt-1">準備開始語音練習...</p>
+                    </div>
+                  </>
+                )}
+
                 {/* 階段 7: 語音練習 Pitch */}
-                {currentStage === 'practice-pitch' && !isRecording && !isSpeaking && (
+                {currentStage === 'practice-pitch' && (
                   <>
                     <button
                       onClick={handleStageButton}
-                      disabled={isProcessing}
+                      disabled={isProcessing || isSpeaking || isRecording}
                       className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
                     >
                       🎤 語音練習 Pitch
@@ -597,11 +617,11 @@ export default function Home() {
                 )}
 
                 {/* 階段 8: 生成關鍵字 */}
-                {currentStage === 'evaluation' && !isSpeaking && (
+                {currentStage === 'evaluation' && (
                   <>
                     <button
                       onClick={handleStageButton}
-                      disabled={isProcessing}
+                      disabled={isProcessing || isSpeaking}
                       className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-yellow-600 hover:to-amber-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
                       📝 生成關鍵字提點
