@@ -533,74 +533,49 @@ export default function Home() {
                 )}
 
                 {/* 階段 2: 自由分享 */}
-                {currentStage === 'intro' && !isRecording && (
+                {currentStage === 'intro' && (
                   <>
                     <button
-                      onClick={handleStageButton}
+                      onClick={isRecording ? stopRecording : handleStageButton}
                       disabled={isProcessing || isSpeaking}
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                      className={`px-8 py-4 rounded-full font-semibold text-lg transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 ${
+                        isRecording 
+                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white recording-pulse' 
+                          : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600'
+                      }`}
                     >
-                      🎤 自由分享
+                      {isRecording ? '🔴 停止錄音' : '🎤 自由分享'}
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      點擊後開始錄音，自由分享您的設計想法
+                      {isRecording 
+                        ? '正在錄音中... 說完後點擊按鈕停止錄音' 
+                        : '點擊後開始錄音，自由分享您的設計想法'
+                      }
                     </p>
                   </>
                 )}
 
-                {/* 錄音中狀態 */}
-                {currentStage === 'intro' && isRecording && (
-                  <>
-                    <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4">
-                      <div className="flex items-center justify-center space-x-3">
-                        <div className="w-4 h-4 bg-red-500 rounded-full recording-pulse"></div>
-                        <p className="text-red-600 font-semibold text-lg">🎙️ 錄音中 - 自由分享</p>
-                      </div>
-                      <p className="text-sm text-gray-600 text-center mt-2">
-                        想到什麼說什麼，說完後點擊下方紅色按鈕停止
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {/* 階段 3: 自由描述完成後 */}
-                {currentStage === 'free-describe' && (
-                  <>
-                    <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-4">
-                      <p className="text-gray-600 font-medium">🎤 自由分享已完成</p>
-                      <p className="text-sm text-gray-500 mt-1">等待 AI 處理並提出問題...</p>
-                    </div>
-                  </>
-                )}
 
                 {/* 階段 4: 回答問題/增加細節 */}
-                {currentStage === 'qa-improve' && !isRecording && (
+                {currentStage === 'qa-improve' && (
                   <>
                     <button
-                      onClick={handleStageButton}
+                      onClick={isRecording ? stopRecording : handleStageButton}
                       disabled={isProcessing || isSpeaking}
-                      className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                      className={`px-8 py-4 rounded-full font-semibold text-lg transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 ${
+                        isRecording 
+                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white recording-pulse' 
+                          : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600'
+                      }`}
                     >
-                      🎤 回答問題/增加細節
+                      {isRecording ? '🔴 停止錄音' : '🎤 回答問題/增加細節'}
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      點擊後開始錄音，回答 AI 提出的問題
+                      {isRecording 
+                        ? '正在錄音中... 說完後點擊按鈕停止錄音' 
+                        : '點擊後開始錄音，回答 AI 提出的問題'
+                      }
                     </p>
-                  </>
-                )}
-
-                {/* 回答問題錄音中狀態 */}
-                {currentStage === 'qa-improve' && isRecording && (
-                  <>
-                    <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4">
-                      <div className="flex items-center justify-center space-x-3">
-                        <div className="w-4 h-4 bg-red-500 rounded-full recording-pulse"></div>
-                        <p className="text-red-600 font-semibold text-lg">🎙️ 錄音中 - 回答問題</p>
-                      </div>
-                      <p className="text-sm text-gray-600 text-center mt-2">
-                        回答 AI 提出的問題，說完後點擊下方紅色按鈕停止
-                      </p>
-                    </div>
                   </>
                 )}
 
@@ -631,33 +606,25 @@ export default function Home() {
                 )}
 
                 {/* 階段 7: 語音練習 Pitch */}
-                {currentStage === 'practice-pitch' && !isRecording && (
+                {currentStage === 'practice-pitch' && (
                   <>
                     <button
-                      onClick={handleStageButton}
+                      onClick={isRecording ? stopRecording : handleStageButton}
                       disabled={isProcessing || isSpeaking}
-                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
+                      className={`px-8 py-4 rounded-full font-semibold text-lg transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 ${
+                        isRecording 
+                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white recording-pulse' 
+                          : 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 animate-pulse'
+                      }`}
                     >
-                      🎤 語音練習 Pitch
+                      {isRecording ? '🔴 停止錄音' : '🎤 語音練習 Pitch'}
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      準備好後，點擊開始朗讀剛才生成的 pitch
+                      {isRecording 
+                        ? '正在錄音中... 說完後點擊按鈕停止錄音' 
+                        : '準備好後，點擊開始朗讀剛才生成的 pitch'
+                      }
                     </p>
-                  </>
-                )}
-
-                {/* 練習 Pitch 錄音中狀態 */}
-                {currentStage === 'practice-pitch' && isRecording && (
-                  <>
-                    <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4">
-                      <div className="flex items-center justify-center space-x-3">
-                        <div className="w-4 h-4 bg-red-500 rounded-full recording-pulse"></div>
-                        <p className="text-red-600 font-semibold text-lg">🎙️ 錄音中 - 練習 Pitch</p>
-                      </div>
-                      <p className="text-sm text-gray-600 text-center mt-2">
-                        朗讀剛才生成的 pitch，說完後點擊下方紅色按鈕停止
-                      </p>
-                    </div>
                   </>
                 )}
 
@@ -830,19 +797,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 停止錄音按鈕（錄音時顯示） */}
-        {isRecording && (
-          <div className="flex justify-center items-center mb-6">
-            <button
-              onClick={stopRecording}
-              className="relative w-20 h-20 rounded-full flex items-center justify-center transition-all transform hover:scale-110 bg-red-500 recording-pulse shadow-lg"
-            >
-              <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <rect x="6" y="6" width="12" height="12" rx="2" />
-              </svg>
-            </button>
-          </div>
-        )}
 
         {/* 關鍵字筆記顯示區域 */}
         {currentStage === 'keywords' && generatedPitch && (

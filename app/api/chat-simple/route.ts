@@ -24,7 +24,6 @@ const STAGE_PROMPTS: Record<ConversationStage, string> = {
 const STAGE_TRANSITIONS: Record<ConversationStage, ConversationStage> = {
   'upload': 'intro',
   'intro': 'intro', // 保持 intro 階段，直到錄音完成
-  'free-describe': 'qa-improve',
   'qa-improve': 'confirm-summary',
   'confirm-summary': 'generate-pitch',
   'generate-pitch': 'practice-pitch',
@@ -164,12 +163,13 @@ export async function POST(request: NextRequest) {
 
     // 根據回應內容判斷是否該進入下一階段
     if (currentStage === 'intro' && assistantReply.includes('問題')) {
-      // 學生錄音完成，AI 提出問題，轉到 free-describe 階段
-      nextStage = 'free-describe'
-    } else if (currentStage === 'free-describe' && assistantReply.includes('問題')) {
+      // 學生錄音完成，AI 提出問題，直接轉到 qa-improve 階段
       nextStage = 'qa-improve'
     } else if (currentStage === 'qa-improve' && (assistantReply.toLowerCase().includes('summary') || assistantReply.includes('整理'))) {
       nextStage = 'confirm-summary'
+    } else if (currentStage === 'confirm-summary' && assistantReply.includes('Pitch')) {
+      // 確認重點後，生成 Pitch，轉到 generate-pitch 階段
+      nextStage = 'generate-pitch'
     } else if (currentStage === 'practice-pitch' && assistantReply.includes('評分')) {
       nextStage = 'evaluation'
     }
