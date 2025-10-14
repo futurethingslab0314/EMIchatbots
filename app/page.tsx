@@ -203,6 +203,10 @@ export default function Home() {
 
     const audio = new Audio(audioUrl)
     
+    // 設置音頻屬性以支援手機播放
+    audio.setAttribute('playsinline', 'true') // iOS 需要
+    audio.preload = 'auto'
+    
     return new Promise<void>((resolve) => {
       audio.onended = () => {
         setIsSpeaking(false)
@@ -210,13 +214,36 @@ export default function Home() {
         resolve()
       }
       
-      audio.onerror = () => {
+      audio.onerror = (e) => {
+        console.error('音頻播放錯誤:', e)
         setIsSpeaking(false)
         setCurrentSubtitle('')
         resolve()
       }
       
-      audio.play()
+      // 嘗試播放音頻，並處理可能的錯誤
+      audio.play().catch((error) => {
+        console.error('播放音頻失敗:', error)
+        
+        // 如果是自動播放被阻擋（常見於手機瀏覽器）
+        if (error.name === 'NotAllowedError' || error.name === 'NotSupportedError') {
+          console.warn('⚠️ 音頻自動播放被阻擋，這在手機上很常見')
+          // 即使播放失敗，也要清除狀態
+          setIsSpeaking(false)
+          setCurrentSubtitle('')
+          resolve()
+        } else {
+          // 其他錯誤，嘗試重新播放一次
+          setTimeout(() => {
+            audio.play().catch(() => {
+              console.error('重試播放也失敗')
+              setIsSpeaking(false)
+              setCurrentSubtitle('')
+              resolve()
+            })
+          }, 100)
+        }
+      })
     })
   }
 
@@ -828,7 +855,7 @@ export default function Home() {
                       </button>
                       <button
                         onClick={async () => {
-                          await triggerStageAction('evaluation')
+                          await triggerStageAction('keywords')
                         }}
                         disabled={isProcessing || isSpeaking}
                         className="btn-generate-keywords"
