@@ -5,13 +5,15 @@ import { openai, sendMessageSimple } from '@/lib/vocabulary-simple'
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const audioFile = formData.get('audio') as File
+    const audioFile = formData.get('audio') as File | null
     const messagesStr = formData.get('messages') as string
     const imagesStr = formData.get('images') as string
     const hasImages = formData.get('hasImages') === 'true'
     const conversationStarted = formData.get('conversationStarted') === 'true'
     const imagesUploaded = formData.get('imagesUploaded') === 'true'
     const triggerIntro = formData.get('triggerIntro') === 'true'
+
+    console.log('📨 收到請求:', { hasImages, conversationStarted, imagesUploaded, triggerIntro })
 
     let messages = []
     let images: string[] = []
@@ -25,27 +27,23 @@ export async function POST(request: NextRequest) {
     try {
       if (imagesStr) {
         images = JSON.parse(imagesStr)
+        console.log(`📸 收到 ${images.length} 張圖片`)
       }
     } catch (e) {
       images = []
     }
 
-    // 步驟 1: 使用 Whisper API 轉錄音訊
-    const transcription = await openai.audio.transcriptions.create({
-      file: audioFile,
-      model: 'whisper-1',
-      language: 'zh',
-    })
-
-    const userText = transcription.text
-
-    // 特殊處理：觸發介紹（步驟 1）
+    // 特殊處理：觸發介紹（步驟 1）- 在轉錄音訊之前檢查
     if (triggerIntro && imagesUploaded) {
+      console.log('🎬 觸發 Bot 介紹（步驟 1）')
+      
       const introMessage = await sendMessageSimple(
         [],
         '（使用者已上傳作品照片並準備開始）請開始步驟 1：描述你看到的照片內容，並用鼓勵且友善的態度請學生快速描述作品。',
         images
       )
+
+      console.log('✅ Bot 介紹生成完成')
 
       const speech = await openai.audio.speech.create({
         model: 'tts-1',
@@ -58,12 +56,26 @@ export async function POST(request: NextRequest) {
       const audioBase64 = audioBuffer.toString('base64')
       const audioUrl = `data:audio/mpeg;base64,${audioBase64}`
 
+      console.log('✅ 語音生成完成')
+
       return NextResponse.json({
         transcription: '',
         reply: introMessage,
         audioUrl,
       })
     }
+
+    // 步驟 1: 使用 Whisper API 轉錄音訊（只有在正常對話時才執行）
+    if (!audioFile) {
+      throw new Error('缺少音訊檔案')
+    }
+    const transcription = await openai.audio.transcriptions.create({
+      file: audioFile,
+      model: 'whisper-1',
+      language: 'zh',
+    })
+
+    const userText = transcription.text
 
     // 如果是第一次對話且沒有上傳圖片，提醒使用者上傳
     if (!conversationStarted && !hasImages) {
@@ -113,11 +125,27 @@ export async function POST(request: NextRequest) {
       audioUrl,
     })
   } catch (error: any) {
-    console.error('API 錯誤:', error)
+    console.error('❌ API 錯誤:', error)
+    console.error('錯誤堆疊:', error.stack)
+    
+    // 根據不同的錯誤提供更友善的訊息
+    let errorMessage = '處理請求時發生錯誤'
+    
+    if (error.message?.includes('API key')) {
+      errorMessage = 'OpenAI API Key 設定錯誤，請檢查環境變數'
+    } else if (error.message?.includes('quota')) {
+      errorMessage = 'OpenAI API 配額不足，請檢查帳戶餘額'
+    } else if (error.message?.includes('model')) {
+      errorMessage = 'AI 模型呼叫失敗，請稍後再試'
+    } else if (error.message?.includes('音訊')) {
+      errorMessage = '語音處理失敗，請重新錄音'
+    }
+    
     return NextResponse.json(
       {
-        error: '處理請求時發生錯誤',
+        error: errorMessage,
         details: error.message,
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     )

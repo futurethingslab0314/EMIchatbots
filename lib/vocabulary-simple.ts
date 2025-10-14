@@ -80,17 +80,27 @@ export async function getSystemPrompt(): Promise<string> {
 
   if (vocabularyUrl) {
     try {
-      console.log('📥 下載詞彙表:', vocabularyUrl)
+      console.log('📥 嘗試下載詞彙表:', vocabularyUrl)
       const vocabularyText = await downloadVocabularyText(vocabularyUrl)
       console.log(`✅ 詞彙表下載完成 (${vocabularyText.length} 字元)`)
       return createSystemPromptWithVocabulary(vocabularyText)
-    } catch (error) {
-      console.warn('⚠️ 無法下載詞彙表，使用預設 prompt:', error)
+    } catch (error: any) {
+      console.error('⚠️ 無法下載詞彙表:', error.message)
+      console.log('使用預設 prompt（無詞彙表）')
     }
+  } else {
+    console.log('⚠️ 未設定 VOCABULARY_PDF_URL，使用預設 prompt')
   }
 
-  // 如果沒有詞彙表 URL，使用預設 prompt
-  return createSystemPromptWithVocabulary('(詞彙表未設定)')
+  // 如果沒有詞彙表 URL 或下載失敗，使用預設 prompt
+  const defaultVocab = `
+常用設計詞彙（預設列表）：
+- Prototype (原型), Iteration (迭代), User Study (使用者研究)
+- Material (材質), Texture (質感), Ergonomics (人體工學)
+- Sustainability (永續性), Functionality (功能性)
+- Balance (平衡), Harmony (和諧), Contrast (對比)
+`
+  return createSystemPromptWithVocabulary(defaultVocab)
 }
 
 // 創建對話（支援圖片）
