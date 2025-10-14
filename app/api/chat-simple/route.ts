@@ -15,6 +15,7 @@ const STAGE_PROMPTS: Record<ConversationStage, string> = {
   'confirm-summary': '根據學生的描述和回答，整理出他們想要「表達的設計重點」（120-180 字英文段落）。這是整理他們「說了什麼」，不是評論設計好壞。使用專業詞彙，邏輯清楚。最後請學生確認這個整理是否準確反映他們的想法。',
   'generate-pitch': '根據學生確認的內容和目標聽眾，生成一個 200-300 words 的 3 分鐘英文 pitch 稿（一個段落）。\n\n【重點】這是協助學生「表達他們的設計」，不是重新設計或添加新想法。保持學生原本的設計概念和內容。\n\n結構建議：Hook → Background → Design Intent → Process → Materials & Rationale → Outcomes → Impact\n\n使用適合目標聽眾的語言。最後顯示原創性比例（例如 "Originality: Yours 65%, AI 35%"），說明 AI 主要是協助「語言組織」，核心內容都是學生的。',
   'practice-pitch': '', // 學生練習 pitch，不需要特殊 prompt
+  'practice-again': '', // 練習完成後的選擇階段，由前端按鈕處理
   'evaluation': '學生剛才練習了 pitch 的口語表達。請根據以下「發表技巧 rubric」評分（每項 25 分，總分 100）：\n\n1. **Pronunciation**（發音清晰度）：英語發音是否清楚、專業術語是否正確\n2. **Engaging Tone**（表達吸引力）：是否有抑揚頓挫、重點是否有停頓、語氣是否吸引人\n3. **Content Delivery**（內容表達）：邏輯是否清楚、資訊是否完整、重點是否突出\n4. **Time Management**（時間掌控）：是否在 3 分鐘內、節奏是否適當\n\n【重要】評分重點是「口語表達技巧」，不是設計本身。給予具體分數和改進建議，保持正向鼓勵。',
   'keywords': '生成一份簡潔的 Pitch 關鍵字提點筆記in english，格式適合複製到手機做小抄。包含：\n- 核心訊息（3-5 個重點）\n- 關鍵詞彙（中英對照，含詞彙表術語）\n- 結構提示（開場→過程→結果）\n- 記憶點（數字、引言、亮點）\n\n要簡短易記，方便學生快速瀏覽複習。',
 }
