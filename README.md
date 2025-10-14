@@ -30,10 +30,11 @@ npm install
 
 ### 2. 設定環境變數
 
-複製 `.env.local.example` 並重新命名為 `.env.local`，然後填入您的 OpenAI API Key：
+創建 `.env.local` 檔案並填入您的 OpenAI API Key：
 
 ```bash
-cp .env.local.example .env.local
+# 創建 .env.local 檔案
+touch .env.local
 ```
 
 編輯 `.env.local`：
@@ -48,7 +49,29 @@ OPENAI_API_KEY=sk-your-api-key-here
 > 3. 點擊「Create new secret key」
 > 4. 複製生成的 API Key（請妥善保管，不要分享給他人）
 
-### 3. 本地開發
+### 3. 設定詞彙表 PDF（重要！）
+
+將您的 `vocabularylist.pdf` 放在專案根目錄，然後執行設定腳本：
+
+```bash
+# 確保 vocabularylist.pdf 在專案根目錄
+# 先啟動開發伺服器
+npm run dev
+
+# 開啟新的終端視窗，執行設定腳本
+npm run setup-assistant
+```
+
+設定完成後，將顯示的 `OPENAI_ASSISTANT_ID` 加入 `.env.local`：
+
+```
+OPENAI_API_KEY=sk-your-api-key-here
+OPENAI_ASSISTANT_ID=asst_xxxxxxxxxxxxx
+```
+
+> 📖 **詳細的 PDF 設定說明請參考 `SETUP-PDF.md`**
+
+### 4. 本地開發
 
 ```bash
 npm run dev

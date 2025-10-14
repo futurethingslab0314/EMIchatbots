@@ -18,6 +18,7 @@ export default function Home() {
   const [userTranscript, setUserTranscript] = useState('')
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [conversationStarted, setConversationStarted] = useState(false)
+  const [threadId, setThreadId] = useState<string | null>(null)
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -105,9 +106,13 @@ export default function Home() {
     try {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'recording.webm')
-      formData.append('messages', JSON.stringify(messages))
       formData.append('hasImages', uploadedImages.length > 0 ? 'true' : 'false')
       formData.append('conversationStarted', conversationStarted ? 'true' : 'false')
+      
+      // 傳送 threadId（用於維持對話連續性）
+      if (threadId) {
+        formData.append('threadId', threadId)
+      }
 
       const response = await axios.post('/api/chat', formData, {
         headers: {
@@ -115,7 +120,12 @@ export default function Home() {
         },
       })
 
-      const { transcription, reply, audioUrl } = response.data
+      const { transcription, reply, audioUrl, threadId: newThreadId } = response.data
+
+      // 儲存 threadId
+      if (newThreadId && !threadId) {
+        setThreadId(newThreadId)
+      }
 
       // 添加使用者訊息
       const userMessage: Message = {
