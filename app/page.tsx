@@ -284,29 +284,50 @@ export default function Home() {
   }
 
   // 階段按鈕處理
-  const handleStageButton = () => {
+  const handleStageButton = async () => {
     switch (currentStage) {
       case 'upload':
-        // 開始練習 pitch
+        // 確認上傳作品 → Bot 介紹
         if (uploadedImages.length === 0) {
           alert('請至少上傳一張作品照片')
           return
         }
-        triggerStageAction('intro')
+        await triggerStageAction('intro')
+        break
+      
+      case 'intro':
+        // 開始自由描述作品 → 啟動錄音
+        startRecording()
+        break
+      
+      case 'free-describe':
+        // 描述完畢，等待 bot 提問
+        // 不需要按鈕動作，錄音完成後自動處理
+        break
+      
+      case 'qa-improve':
+        // 開始回答問題 → 啟動錄音
+        startRecording()
         break
       
       case 'confirm-summary':
         // 確認生成 3 mins pitch
-        triggerStageAction('generate-pitch')
+        await triggerStageAction('generate-pitch')
         break
       
       case 'generate-pitch':
-        // 已生成 pitch，不需要按鈕動作（改用錄音練習）
+        // Pitch 已生成，準備練習
+        // 等待學生準備好
+        break
+      
+      case 'practice-pitch':
+        // 開始語音練習 pitch → 啟動錄音
+        startRecording()
         break
       
       case 'evaluation':
         // 生成關鍵字提點
-        triggerStageAction('keywords')
+        await triggerStageAction('keywords')
         break
       
       default:
@@ -491,55 +512,145 @@ export default function Home() {
             </div>
           )}
 
-          {/* 階段按鈕 */}
+          {/* 主要操作按鈕 - 根據階段動態顯示 */}
           {uploadedImages.length > 0 && (
             <div className="mt-6">
-              {currentStage === 'upload' && (
-                <div className="text-center">
-                  <button
-                    onClick={handleStageButton}
-                    disabled={isProcessing}
-                    className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
-                  >
-                    ✨ 開始練習 Pitch
-                  </button>
-                  <p className="text-sm text-gray-500 mt-2">
-                    點擊後，AI 教練會開始引導您進行作品介紹
-                  </p>
-                </div>
-              )}
+              <div className="text-center">
+                {/* 階段 1: 確認上傳作品 */}
+                {currentStage === 'upload' && (
+                  <>
+                    <button
+                      onClick={handleStageButton}
+                      disabled={isProcessing || isSpeaking}
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                    >
+                      📤 確認上傳作品
+                    </button>
+                    <p className="text-sm text-gray-500 mt-2">
+                      AI 教練會先觀察您的作品並開始引導
+                    </p>
+                  </>
+                )}
 
-              {currentStage === 'confirm-summary' && (
-                <div className="text-center">
-                  <button
-                    onClick={handleStageButton}
-                    disabled={isProcessing}
-                    className="bg-gradient-to-r from-green-500 to-teal-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-green-600 hover:to-teal-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
-                  >
-                    ✅ 確認生成 3 分鐘 Pitch
-                  </button>
-                  <p className="text-sm text-gray-500 mt-2">
-                    確認設計重點後，AI 會為您生成完整的英文 pitch 稿
-                  </p>
-                </div>
-              )}
+                {/* 階段 2: 開始自由描述 */}
+                {currentStage === 'intro' && !isRecording && !isSpeaking && (
+                  <>
+                    <button
+                      onClick={handleStageButton}
+                      disabled={isProcessing}
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                    >
+                      🎤 開始自由描述作品
+                    </button>
+                    <p className="text-sm text-gray-500 mt-2">
+                      點擊後開始錄音，想到什麼說什麼
+                    </p>
+                  </>
+                )}
 
-              {currentStage === 'evaluation' && (
-                <div className="text-center">
-                  <button
-                    onClick={handleStageButton}
-                    disabled={isProcessing}
-                    className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-yellow-600 hover:to-orange-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
-                  >
-                    📝 生成 Pitch 關鍵字提點
-                  </button>
-                  <p className="text-sm text-gray-500 mt-2">
-                    生成可複製的關鍵字筆記，方便您製作小抄
-                  </p>
-                </div>
-              )}
+                {/* 階段 4: 開始回答問題 */}
+                {currentStage === 'qa-improve' && !isRecording && !isSpeaking && (
+                  <>
+                    <button
+                      onClick={handleStageButton}
+                      disabled={isProcessing}
+                      className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                    >
+                      🎤 開始回答問題
+                    </button>
+                    <p className="text-sm text-gray-500 mt-2">
+                      點擊後開始錄音，回答 AI 提出的問題
+                    </p>
+                  </>
+                )}
 
-              {currentStage !== 'upload' && (
+                {/* 階段 5: 確認生成 Pitch */}
+                {currentStage === 'confirm-summary' && !isSpeaking && (
+                  <>
+                    <button
+                      onClick={handleStageButton}
+                      disabled={isProcessing}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                    >
+                      ✅ 確認生成 3 分鐘 Pitch
+                    </button>
+                    <p className="text-sm text-gray-500 mt-2">
+                      確認設計重點無誤後，AI 會為您生成完整 pitch 稿
+                    </p>
+                  </>
+                )}
+
+                {/* 階段 7: 開始練習 Pitch */}
+                {currentStage === 'practice-pitch' && !isRecording && !isSpeaking && (
+                  <>
+                    <button
+                      onClick={handleStageButton}
+                      disabled={isProcessing}
+                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
+                    >
+                      🎤 開始語音練習 Pitch
+                    </button>
+                    <p className="text-sm text-gray-500 mt-2">
+                      準備好後，點擊開始朗讀剛才生成的 pitch
+                    </p>
+                  </>
+                )}
+
+                {/* 階段 8: 生成關鍵字 */}
+                {currentStage === 'evaluation' && !isSpeaking && (
+                  <>
+                    <button
+                      onClick={handleStageButton}
+                      disabled={isProcessing}
+                      className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-yellow-600 hover:to-amber-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                    >
+                      📝 生成關鍵字提點
+                    </button>
+                    <p className="text-sm text-gray-500 mt-2">
+                      查看評分後，生成可複製的關鍵字筆記
+                    </p>
+                  </>
+                )}
+
+                {/* 錄音中的狀態顯示 */}
+                {isRecording && (
+                  <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4">
+                    <div className="flex items-center justify-center space-x-3">
+                      <div className="w-4 h-4 bg-red-500 rounded-full recording-pulse"></div>
+                      <p className="text-red-600 font-semibold text-lg">🎙️ 錄音中...</p>
+                    </div>
+                    <p className="text-sm text-gray-600 text-center mt-2">
+                      說完後點擊下方麥克風停止錄音
+                    </p>
+                  </div>
+                )}
+
+                {/* 處理中的狀態 */}
+                {isProcessing && (
+                  <div className="flex items-center justify-center space-x-3 py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <p className="text-gray-600 font-medium">AI 處理中...</p>
+                  </div>
+                )}
+
+                {/* AI 說話中的狀態 */}
+                {isSpeaking && (
+                  <div className="bg-purple-50 border-2 border-purple-500 rounded-xl p-4">
+                    <div className="flex items-center justify-center space-x-3">
+                      <svg className="w-6 h-6 text-purple-500 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                      </svg>
+                      <p className="text-purple-600 font-semibold text-lg">🔊 AI 教練說話中...</p>
+                    </div>
+                    <p className="text-sm text-gray-600 text-center mt-2">
+                      請仔細聆聽
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* 當前階段提示 */}
+              {currentStage !== 'upload' && !isRecording && !isProcessing && !isSpeaking && (
                 <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                   <p className="text-sm text-blue-700">
                     <strong>當前階段：</strong> {getStageLabel(currentStage)}
@@ -598,8 +709,8 @@ export default function Home() {
           
           {messages.length === 0 ? (
             <div className="text-center text-gray-400 py-12">
-              <p>點擊下方麥克風按鈕開始對話</p>
-              <p className="text-sm mt-2">我會協助您練習設計作品的英語 pitch</p>
+              <p>上傳作品照片後點擊按鈕開始</p>
+              <p className="text-sm mt-2">AI 教練會引導您完成英語 pitch 練習</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -654,58 +765,19 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 語音控制按鈕 */}
-        <div className="flex justify-center items-center space-x-4">
-          <button
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={
-              isProcessing || 
-              isSpeaking || 
-              !['free-describe', 'qa-improve', 'practice-pitch'].includes(currentStage)
-            }
-            className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed ${
-              isRecording
-                ? 'bg-red-500 recording-pulse'
-                : ['free-describe', 'qa-improve', 'practice-pitch'].includes(currentStage)
-                  ? 'bg-blue-500 hover:bg-blue-600'
-                  : 'bg-gray-400'
-            }`}
-          >
-            {isRecording ? (
+        {/* 停止錄音按鈕（錄音時顯示） */}
+        {isRecording && (
+          <div className="flex justify-center items-center mb-6">
+            <button
+              onClick={stopRecording}
+              className="relative w-20 h-20 rounded-full flex items-center justify-center transition-all transform hover:scale-110 bg-red-500 recording-pulse shadow-lg"
+            >
               <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <rect x="6" y="6" width="12" height="12" rx="2" />
               </svg>
-            ) : (
-              <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-              </svg>
-            )}
-          </button>
-
-          <div className="text-center">
-            {isProcessing && (
-              <div className="flex items-center justify-center space-x-2">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                <p className="text-gray-600">處理中...</p>
-              </div>
-            )}
-            {isSpeaking && (
-              <p className="text-gray-600">🔊 AI 教練說話中...</p>
-            )}
-            {!isRecording && !isProcessing && !isSpeaking && (
-              <div>
-                <p className="text-gray-600 font-medium">{getMicButtonLabel()}</p>
-                {['free-describe', 'qa-improve', 'practice-pitch'].includes(currentStage) && (
-                  <p className="text-sm text-gray-500 mt-1">點擊麥克風後開始說話</p>
-                )}
-              </div>
-            )}
-            {isRecording && (
-              <p className="text-red-500 font-semibold">🎙️ 錄音中...</p>
-            )}
+            </button>
           </div>
-        </div>
+        )}
 
         {/* 關鍵字筆記顯示區域 */}
         {currentStage === 'keywords' && generatedPitch && (
