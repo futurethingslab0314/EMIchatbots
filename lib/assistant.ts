@@ -160,8 +160,10 @@ export async function setupAssistant(pdfSource?: string) {
     }
 
     // 1. 上傳 PDF 檔案到 OpenAI
+    // 將 Buffer 轉換為 Blob（Vercel 環境兼容）
+    const blob = new Blob([fileBuffer], { type: 'application/pdf' })
     const file = await openai.files.create({
-      file: new File([fileBuffer], fileName, { type: 'application/pdf' }),
+      file: blob as any, // TypeScript 類型兼容性處理
       purpose: 'assistants',
     })
 
