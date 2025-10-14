@@ -7,14 +7,25 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const audioFile = formData.get('audio') as File
     const messagesStr = formData.get('messages') as string
+    const imagesStr = formData.get('images') as string
     const hasImages = formData.get('hasImages') === 'true'
     const conversationStarted = formData.get('conversationStarted') === 'true'
 
     let messages = []
+    let images: string[] = []
+    
     try {
       messages = JSON.parse(messagesStr || '[]')
     } catch (e) {
       messages = []
+    }
+
+    try {
+      if (imagesStr) {
+        images = JSON.parse(imagesStr)
+      }
+    } catch (e) {
+      images = []
     }
 
     // 步驟 1: 使用 Whisper API 轉錄音訊
@@ -48,8 +59,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 步驟 2: 使用簡化版對話（直接用 Chat Completions + 詞彙表）
-    const assistantReply = await sendMessageSimple(messages, userText)
+    // 步驟 2: 使用簡化版對話（直接用 Chat Completions + 詞彙表 + 圖片）
+    const assistantReply = await sendMessageSimple(messages, userText, images)
 
     // 步驟 3: 使用 TTS API 生成語音
     const speech = await openai.audio.speech.create({

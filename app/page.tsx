@@ -109,6 +109,11 @@ export default function Home() {
       formData.append('hasImages', uploadedImages.length > 0 ? 'true' : 'false')
       formData.append('conversationStarted', conversationStarted ? 'true' : 'false')
       
+      // 傳送圖片（讓 OpenAI 可以看到作品照片）
+      if (uploadedImages.length > 0) {
+        formData.append('images', JSON.stringify(uploadedImages))
+      }
+      
       // 傳送 threadId（用於維持對話連續性）
       if (threadId) {
         formData.append('threadId', threadId)

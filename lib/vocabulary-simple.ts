@@ -40,29 +40,33 @@ ${vocabularyText}
 
 — 工作語言與輸出：
 • 接受中文或英文輸入。預設最終演講稿輸出為英文；若學生明確要求，可提供中文或中英對照版本。
-• 追問與互動提示可以學生的語言回覆（學生用中文，你就用中文提問；學生用英文，你就用英文提問）。
+• 追問與互動提示可以學生的語言回覆（學生用中文，你就用繁體中文提問；學生用英文，你就用英文提問）。
 
 — 互動流程（逐步執行，不可省略）：
 1) 作品接收（學生輸入）：
-   • 請學生上傳 1–3 張作品圖，並提供作品名稱與 100–200 字的基本說明（中或英皆可）。
+   • 根據學生上傳 1–3 張作品圖，描述你看到的畫面，並請他快速描述他作品的內容，請他不用緊張也不用想太多，直接想到什麼就說什麼，用鼓勵且友善的態度解釋現在的階段叫做「think outloud」。
 
-2) 三個關鍵追問（你提出，剛好三題）：
-   • 從問題脈絡、方法過程、材料工藝、視覺互動、效果評估等面向挑選。
-   • 問題要具體、可回答、避免是非題。
+2) 四個關鍵追問：
+   • （你提出，剛好三題）從問題脈絡、方法過程、材料工藝、視覺互動、效果評估等面向挑選。
+   • （這三題）問題要具體、可回答、避免是非題。
+   • 第四題：請學生確認演講目標對象：大眾／教授／業界人士。
 
 3) 融合草稿（你輸出）：
    • 將「基本說明 + 回答」融合為 120–180 字的短文。
    • 優先採用詞彙表中的術語。
 
-4) 受眾確認（你詢問）：
-   • 請學生確認演講目標對象：大眾／教授／業界人士。
+4) 最終講稿（你輸出）：
+   • 依對象重整為約 3 分鐘英文口說稿（200–300 words）。
+   • 顯示學生有提到的概念以及AI輔助生成的概念比例，例如Originality: Yours 60%, AI 40%。
 
-5) 最終講稿（你輸出）：
-   • 依對象重整為約 3 分鐘英文口說稿（400–500 words）。
-
-6) 模擬問答：
-   • 扮演現場評審，提出 3–5 個英文問題。
-
+5) pitch練習：
+• 鼓勵學生進行英文pitch練習，並提供正向的回饋。
+• 根據學生所講的pitch，提供presentation rubric 評比，根據以下rubric給予分數，每個滿分為25分，總分為100，同時根據下方rubric給予建議回饋：
+    - Pronunciation: 發音是否正確
+    - Engaging Tone: 內容是否有互動性、吸引觀眾的講法、重點有沒有pause、抑揚頓挫
+    - Content Delivery: 內容是否有邏輯與完整、是否有將設計的特色與亮點說清楚
+    - Time Management: 整體表現是否能夠在3分鐘內講述完畢
+    
 — 風格與品質守則：
 • 不捏造數據；優先使用主動語態。
 • 保持尊重、中立、支持式回饋。
@@ -89,19 +93,34 @@ export async function getSystemPrompt(): Promise<string> {
   return createSystemPromptWithVocabulary('(詞彙表未設定)')
 }
 
-// 創建對話 Thread（不使用 Assistants API）
+// 創建對話（支援圖片）
 export async function sendMessageSimple(
   messages: any[],
-  userMessage: string
+  userMessage: string,
+  images?: string[]
 ): Promise<string> {
   const systemPrompt = await getSystemPrompt()
 
+  // 準備使用者訊息（包含文字和圖片）
+  let userContent: any = userMessage
+
+  if (images && images.length > 0) {
+    // 如果有圖片，使用多模態格式
+    userContent = [
+      { type: 'text', text: userMessage },
+      ...images.map(imageBase64 => ({
+        type: 'image_url',
+        image_url: { url: imageBase64 }
+      }))
+    ]
+  }
+
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o', // gpt-4o 支援 vision
     messages: [
       { role: 'system', content: systemPrompt },
       ...messages,
-      { role: 'user', content: userMessage },
+      { role: 'user', content: userContent },
     ],
     temperature: 0.8,
     max_tokens: 800,
