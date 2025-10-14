@@ -34,6 +34,13 @@ export default function Home() {
   const [showCamera, setShowCamera] = useState(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const [generatedPitch, setGeneratedPitch] = useState('')
+  const [evaluationScores, setEvaluationScores] = useState<{
+    originality: number
+    pronunciation: number
+    engagingTone: number
+    contentDelivery: number
+    timeManagement: number
+  } | null>(null)
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -166,6 +173,11 @@ export default function Home() {
       // 儲存生成的 pitch
       if (pitch) {
         setGeneratedPitch(pitch)
+      }
+
+      // 如果是 practice-pitch 階段，嘗試提取評分
+      if (currentStage === 'practice-pitch' && nextStage === 'practice-again') {
+        extractScoresFromResponse(reply)
       }
 
       // 播放語音回覆並顯示字幕
@@ -451,6 +463,30 @@ export default function Home() {
     return labels[currentStage] || '點擊麥克風說話'
   }
 
+  // 從 AI 回應中提取評分數據
+  const extractScoresFromResponse = (response: string) => {
+    try {
+      // 嘗試解析評分（尋找數字格式）
+      const originalityMatch = response.match(/Originality[：:]\s*(\d+)/i) || response.match(/原創性[）：]*\s*(\d+)/)
+      const pronunciationMatch = response.match(/Pronunciation[：:]\s*(\d+)/i) || response.match(/發音[清晰度）：]*\s*(\d+)/)
+      const engagingMatch = response.match(/Engaging Tone[：:]\s*(\d+)/i) || response.match(/表達吸引力[）：]*\s*(\d+)/)
+      const contentMatch = response.match(/Content Delivery[：:]\s*(\d+)/i) || response.match(/內容表達[）：]*\s*(\d+)/)
+      const timeMatch = response.match(/Time Management[：:]\s*(\d+)/i) || response.match(/時間[掌控）：]*\s*(\d+)/)
+
+      if (originalityMatch && pronunciationMatch && engagingMatch && contentMatch && timeMatch) {
+        setEvaluationScores({
+          originality: parseInt(originalityMatch[1]),
+          pronunciation: parseInt(pronunciationMatch[1]),
+          engagingTone: parseInt(engagingMatch[1]),
+          contentDelivery: parseInt(contentMatch[1]),
+          timeManagement: parseInt(timeMatch[1]),
+        })
+      }
+    } catch (error) {
+      console.error('解析評分時發生錯誤:', error)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       <div className="max-w-4xl mx-auto">
@@ -654,9 +690,100 @@ export default function Home() {
                   </>
                 )}
 
-                {/* 練習完成後 - 兩個選擇按鈕 */}
+                {/* 練習完成後 - 評分圖表與兩個選擇按鈕 */}
                 {currentStage === 'practice-again' && (
                   <>
+                    {/* 評分圖表 */}
+                    {evaluationScores && (
+                      <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">
+                          📊 Pitch 表達技巧評分
+                        </h3>
+                        <div className="space-y-4">
+                          {/* Originality */}
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium text-gray-700">Originality (內容原創性)</span>
+                              <span className="text-lg font-bold text-indigo-600">{evaluationScores.originality}/20</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                              <div 
+                                className="bg-gradient-to-r from-indigo-400 to-indigo-600 h-4 rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: `${(evaluationScores.originality / 20) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* Pronunciation */}
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium text-gray-700">Pronunciation (發音清晰度)</span>
+                              <span className="text-lg font-bold text-blue-600">{evaluationScores.pronunciation}/20</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                              <div 
+                                className="bg-gradient-to-r from-blue-400 to-blue-600 h-4 rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: `${(evaluationScores.pronunciation / 20) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* Engaging Tone */}
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium text-gray-700">Engaging Tone (表達吸引力)</span>
+                              <span className="text-lg font-bold text-green-600">{evaluationScores.engagingTone}/20</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                              <div 
+                                className="bg-gradient-to-r from-green-400 to-green-600 h-4 rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: `${(evaluationScores.engagingTone / 20) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* Content Delivery */}
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium text-gray-700">Content Delivery (內容表達)</span>
+                              <span className="text-lg font-bold text-purple-600">{evaluationScores.contentDelivery}/20</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                              <div 
+                                className="bg-gradient-to-r from-purple-400 to-purple-600 h-4 rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: `${(evaluationScores.contentDelivery / 20) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* Time Management */}
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium text-gray-700">Time Management (時間掌控)</span>
+                              <span className="text-lg font-bold text-orange-600">{evaluationScores.timeManagement}/20</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                              <div 
+                                className="bg-gradient-to-r from-orange-400 to-orange-600 h-4 rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: `${(evaluationScores.timeManagement / 20) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* 總分 */}
+                          <div className="pt-4 mt-4 border-t-2 border-gray-200">
+                            <div className="flex justify-between items-center">
+                              <span className="text-lg font-bold text-gray-800">總分 Total Score</span>
+                              <span className="text-2xl font-bold text-indigo-600">
+                                {evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement}/100
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 雙按鈕選擇 */}
                     <div className="flex space-x-4 justify-center">
                       <button
                         onClick={() => {
@@ -820,7 +947,7 @@ export default function Home() {
 
         {/* 對話歷史 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 min-h-[300px] max-h-[400px] overflow-y-auto">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">💬 對話記錄</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">💬 對話記錄 Histor</h2>
           
           {messages.length === 0 ? (
             <div className="text-center text-gray-400 py-12">
