@@ -17,7 +17,6 @@ type ConversationStage =
   | 'confirm-summary'  // 確認設計重點
   | 'generate-pitch'   // 生成 3 分鐘 pitch
   | 'practice-pitch'   // 學生練習 pitch
-  | 'practice-again'   // 練習完成後的選擇
   | 'evaluation'       // Bot 評分
   | 'keywords'         // 生成關鍵字筆記
 
@@ -175,12 +174,8 @@ export default function Home() {
         setGeneratedPitch(pitch)
       }
 
-      // 自動觸發評分階段
-      if (currentStage === 'practice-pitch' && nextStage === 'evaluation') {
-        // 自動觸發 evaluation 階段
-        await triggerStageAction('evaluation')
-      } else if (currentStage === 'evaluation' && nextStage === 'practice-again') {
-        // 提取評分數據
+      // 提取評分數據（當進入 evaluation 階段時）
+      if (currentStage === 'evaluation' || nextStage === 'evaluation') {
         extractScoresFromResponse(reply)
       }
 
@@ -375,10 +370,6 @@ export default function Home() {
         startRecording()
         break
       
-      case 'practice-again':
-        // 重新練習 pitch → 啟動錄音
-        startRecording()
-        break
       
       case 'evaluation':
         // 生成關鍵字提點
@@ -483,7 +474,6 @@ export default function Home() {
       'confirm-summary': '確認設計重點 / Confirm Summary',
       'generate-pitch': '生成 Pitch 稿 / Generate Pitch',
       'practice-pitch': '練習 Pitch / Practice Pitch',
-      'practice-again': '練習完成選擇 / Practice Again',
       'evaluation': '評分與回饋 / Evaluation',
       'keywords': '關鍵字筆記 / Keywords',
     }
@@ -499,7 +489,6 @@ export default function Home() {
       'confirm-summary': '確認後點擊上方按鈕 Confirm Summary',
       'generate-pitch': '等待 Pitch 生成... Generate Pitch',
       'practice-pitch': '🎤 語音練習 Practice Pitch',
-      'practice-again': '選擇再次練習或生成筆記 Practice Again',
       'evaluation': '等待評分... Evaluation',
       'keywords': '查看關鍵字筆記 Keywords',
     }
@@ -748,29 +737,26 @@ export default function Home() {
                   </>
                 )}
 
-                {/* 練習完成後 - 評分圖表與兩個選擇按鈕 */}
-                {currentStage === 'practice-again' && (
-                  <>
-                    {/* 評分圖表 */}
-                    {evaluationScores && (
-                      <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                        <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">
-                          📊 Pitch 表達技巧評分 / Pitch Presentation Skills Evaluation
-                        </h3>
-                        <div className="space-y-4">
-                          {/* Originality */}
-                          <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium text-gray-700">Originality (內容原創性)</span>
-                              <span className="text-lg font-bold text-indigo-600">{evaluationScores.originality}/20</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                              <div 
-                                className="bg-gradient-to-r from-indigo-400 to-indigo-600 h-4 rounded-full transition-all duration-1000 ease-out"
-                                style={{ width: `${(evaluationScores.originality / 20) * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
+                {/* 評分圖表顯示在 evaluation 階段 */}
+                {currentStage === 'evaluation' && evaluationScores && (
+                  <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">
+                      📊 Pitch 表達技巧評分 / Pitch Presentation Skills Evaluation
+                    </h3>
+                    <div className="space-y-4">
+                      {/* Originality */}
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium text-gray-700">Originality (內容原創性)</span>
+                          <span className="text-lg font-bold text-indigo-600">{evaluationScores.originality}/20</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                          <div 
+                            className="bg-gradient-to-r from-indigo-400 to-indigo-600 h-4 rounded-full transition-all duration-1000 ease-out"
+                            style={{ width: `${(evaluationScores.originality / 20) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
 
                           {/* Pronunciation */}
                           <div>
@@ -828,45 +814,17 @@ export default function Home() {
                             </div>
                           </div>
 
-                          {/* 總分 */}
-                          <div className="pt-4 mt-4 border-t-2 border-gray-200">
-                            <div className="flex justify-between items-center">
-                              <span className="text-lg font-bold text-gray-800">總分 Total Score</span>
-                              <span className="text-2xl font-bold text-indigo-600">
-                                {evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement}/100
-                              </span>
-                            </div>
-                          </div>
+                      {/* 總分 */}
+                      <div className="pt-4 mt-4 border-t-2 border-gray-200">
+                        <div className="flex justify-between items-center">
+                          <span className="text-lg font-bold text-gray-800">總分 Total Score</span>
+                          <span className="text-2xl font-bold text-indigo-600">
+                            {evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement}/100
+                          </span>
                         </div>
                       </div>
-                    )}
-
-                    {/* 雙按鈕選擇 */}
-                    <div className="flex space-x-4 justify-center">
-                      <button
-                        onClick={() => {
-                          setCurrentStage('practice-pitch')
-                          // 只切換階段，讓學生在 practice-pitch 階段手動點擊開始錄音
-                        }}
-                        disabled={isProcessing || isSpeaking}
-                        className="btn-practice-again"
-                      >
-                        🔄 再次練習 Pitch / Practice Again
-                      </button>
-                      <button
-                        onClick={async () => {
-                          await triggerStageAction('keywords')
-                        }}
-                        disabled={isProcessing || isSpeaking}
-                        className="btn-generate-keywords"
-                      >
-                        📝 生成關鍵字提點 / Generate Keywords
-                      </button>
                     </div>
-                    <p className="text-sm text-gray-500 mt-2 text-center">
-                      可以再次練習或直接生成關鍵字筆記 / Practice again or generate keywords
-                    </p>
-                  </>
+                  </div>
                 )}
 
                 {/* 階段 8: 生成關鍵字 */}
@@ -877,10 +835,10 @@ export default function Home() {
                       disabled={isProcessing || isSpeaking}
                       className="btn-base btn-yellow-amber"
                     >
-                      📝 生成關鍵字提點 / Generate Keywords
+                      📝 生成 Pitch 小抄 / Generate Pitch Cheat Sheet
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      點擊生成可複製的關鍵字筆記 / Click to generate copyable keyword notes
+                      點擊生成可複製的 Pitch 小抄筆記 / Click to generate copyable pitch cheat sheet
                     </p>
                   </>
                 )}
@@ -1049,7 +1007,7 @@ export default function Home() {
             <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap font-mono text-sm">
               {messages[messages.length - 1]?.content || ''}
             </div>
-            <div className="mt-4 flex space-x-4">
+            <div className="mt-4 flex flex-wrap gap-3 justify-center">
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
@@ -1060,6 +1018,16 @@ export default function Home() {
                 📋 複製關鍵字筆記 / Copy Keywords
               </button>
               <button
+                onClick={() => {
+                  setCurrentStage('practice-pitch')
+                  // 切換到練習階段，讓用戶可以再次練習
+                }}
+                disabled={isProcessing || isSpeaking}
+                className="btn-practice-again"
+              >
+                🔄 再次練習 Pitch / Practice Pitch Again
+              </button>
+              <button
                 onClick={handleStageButton}
                 disabled={isProcessing || isSpeaking}
                 className="btn-restart"
@@ -1068,7 +1036,7 @@ export default function Home() {
               </button>
             </div>
             <p className="text-sm text-gray-500 mt-2 text-center">
-              完成練習！可以複製筆記或重新開始新的作品練習 / Practice complete! Copy notes or start new work practice
+              完成練習！可以複製筆記、再次練習或重新開始新的作品練習 / Practice complete! Copy notes, practice again or start new work
             </p>
           </div>
         )}
@@ -1106,38 +1074,31 @@ export default function Home() {
               </div>
             </div>
             <div className={`flex items-start ${currentStage === 'practice-pitch' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2 mt-1">{currentStage === 'practice-pitch' ? '▶️' : ['practice-again', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
+              <span className="mr-2 mt-1">{currentStage === 'practice-pitch' ? '▶️' : ['evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
               <div className="flex flex-col">
                 <span>5. 🎤 語音練習 Pitch</span>
                 <span className="text-xs opacity-75">5. 🎤 Voice practice Pitch</span>
               </div>
             </div>
-            <div className={`flex items-start ${currentStage === 'practice-again' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2 mt-1">{currentStage === 'practice-again' ? '▶️' : ['evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <div className="flex flex-col">
-                <span>6. 查看評分 → 選擇「再次練習」或「生成關鍵字提點」</span>
-                <span className="text-xs opacity-75">6. View scores → Choose "Practice Again" or "Generate Keywords"</span>
-              </div>
-            </div>
             <div className={`flex items-start ${currentStage === 'evaluation' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2 mt-1">{currentStage === 'evaluation' ? '▶️' : currentStage === 'keywords' ? '✓' : '○'}</span>
               <div className="flex flex-col">
-                <span>7. 生成關鍵字筆記</span>
-                <span className="text-xs opacity-75">7. Generate keyword notes</span>
+                <span>6. 查看評分 → 點擊「生成 Pitch 小抄」</span>
+                <span className="text-xs opacity-75">6. View scores → Click "Generate Pitch Cheat Sheet"</span>
               </div>
             </div>
             <div className={`flex items-start ${currentStage === 'keywords' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2 mt-1">{currentStage === 'keywords' ? '▶️' : '○'}</span>
               <div className="flex flex-col">
-                <span>8. 📝 查看關鍵字筆記 → 複製筆記或重新開始</span>
-                <span className="text-xs opacity-75">8. 📝 View keyword notes → Copy notes or restart</span>
+                <span>7. 📝 查看關鍵字筆記 → 複製筆記、再次練習或重新開始</span>
+                <span className="text-xs opacity-75">7. 📝 View keyword notes → Copy notes, practice again or restart</span>
               </div>
             </div>
             <div className="flex items-start">
               <span className="mr-2 mt-1">🔄</span>
               <div className="flex flex-col">
-                <span>9. 點擊「重新上傳新作品」→ 重新開始完整流程</span>
-                <span className="text-xs opacity-75">9. Click "Upload New Work" → Restart complete flow</span>
+                <span>8. 三個選項：複製筆記 / 再次練習 Pitch / 重新上傳新作品</span>
+                <span className="text-xs opacity-75">8. Three options: Copy notes / Practice Pitch again / Upload new work</span>
               </div>
             </div>
           </div>

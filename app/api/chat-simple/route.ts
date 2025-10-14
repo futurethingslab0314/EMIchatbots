@@ -27,9 +27,9 @@ const STAGE_TRANSITIONS: Record<ConversationStage, ConversationStage> = {
   'qa-improve': 'confirm-summary',
   'confirm-summary': 'generate-pitch',
   'generate-pitch': 'practice-pitch',
-  'practice-pitch': 'practice-again', // 練習完成後進入選擇階段
+  'practice-pitch': 'evaluation', // 練習完成後自動進入評分階段
   'practice-again': 'practice-again', // 保持選擇階段
-  'evaluation': 'keywords',
+  'evaluation': 'evaluation', // 保持在 evaluation 階段，等待用戶點擊生成小抄
   'keywords': 'keywords', // 最終階段
 }
 

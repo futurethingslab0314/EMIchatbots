@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'EMI-DEW 設計英語教練',
-  description: '語音對話式設計作品 Pitch 練習平台',
+  title: '3-Minute Design Pitch Coach',
+  description: 'AI-Enabled Conversation Pitch Practice',
 }
 
 export default function RootLayout({
