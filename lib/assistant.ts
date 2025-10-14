@@ -160,9 +160,9 @@ export async function setupAssistant(pdfSource?: string) {
     }
 
     // 1. 上傳 PDF 檔案到 OpenAI
-    // 將 Buffer 轉換為 Uint8Array，然後創建 File 對象（兼容 Vercel 和 TypeScript）
-    const uint8Array = new Uint8Array(fileBuffer.buffer, fileBuffer.byteOffset, fileBuffer.byteLength)
-    const blob = new Blob([uint8Array], { type: 'application/pdf' })
+    // 使用 Array.from 強制轉換為純 JavaScript 陣列，避免 TypeScript 類型衝突
+    const byteArray = Array.from(fileBuffer)
+    const blob = new Blob([new Uint8Array(byteArray)], { type: 'application/pdf' })
     const file = await openai.files.create({
       file: blob as any, // OpenAI SDK 類型定義兼容性處理
       purpose: 'assistants',
