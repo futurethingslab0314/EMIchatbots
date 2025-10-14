@@ -533,11 +533,11 @@ export default function Home() {
                 )}
 
                 {/* 階段 2: 自由分享 */}
-                {currentStage === 'intro' && (
+                {currentStage === 'intro' && !isRecording && (
                   <>
                     <button
                       onClick={handleStageButton}
-                      disabled={isProcessing || isSpeaking || isRecording}
+                      disabled={isProcessing || isSpeaking}
                       className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
                       🎤 自由分享
@@ -545,6 +545,21 @@ export default function Home() {
                     <p className="text-sm text-gray-500 mt-2">
                       點擊後開始錄音，自由分享您的設計想法
                     </p>
+                  </>
+                )}
+
+                {/* 錄音中狀態 */}
+                {currentStage === 'intro' && isRecording && (
+                  <>
+                    <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4">
+                      <div className="flex items-center justify-center space-x-3">
+                        <div className="w-4 h-4 bg-red-500 rounded-full recording-pulse"></div>
+                        <p className="text-red-600 font-semibold text-lg">🎙️ 錄音中 - 自由分享</p>
+                      </div>
+                      <p className="text-sm text-gray-600 text-center mt-2">
+                        想到什麼說什麼，說完後點擊下方紅色按鈕停止
+                      </p>
+                    </div>
                   </>
                 )}
 
@@ -559,11 +574,11 @@ export default function Home() {
                 )}
 
                 {/* 階段 4: 回答問題/增加細節 */}
-                {currentStage === 'qa-improve' && (
+                {currentStage === 'qa-improve' && !isRecording && (
                   <>
                     <button
                       onClick={handleStageButton}
-                      disabled={isProcessing || isSpeaking || isRecording}
+                      disabled={isProcessing || isSpeaking}
                       className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
                       🎤 回答問題/增加細節
@@ -571,6 +586,21 @@ export default function Home() {
                     <p className="text-sm text-gray-500 mt-2">
                       點擊後開始錄音，回答 AI 提出的問題
                     </p>
+                  </>
+                )}
+
+                {/* 回答問題錄音中狀態 */}
+                {currentStage === 'qa-improve' && isRecording && (
+                  <>
+                    <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4">
+                      <div className="flex items-center justify-center space-x-3">
+                        <div className="w-4 h-4 bg-red-500 rounded-full recording-pulse"></div>
+                        <p className="text-red-600 font-semibold text-lg">🎙️ 錄音中 - 回答問題</p>
+                      </div>
+                      <p className="text-sm text-gray-600 text-center mt-2">
+                        回答 AI 提出的問題，說完後點擊下方紅色按鈕停止
+                      </p>
+                    </div>
                   </>
                 )}
 
@@ -601,11 +631,11 @@ export default function Home() {
                 )}
 
                 {/* 階段 7: 語音練習 Pitch */}
-                {currentStage === 'practice-pitch' && (
+                {currentStage === 'practice-pitch' && !isRecording && (
                   <>
                     <button
                       onClick={handleStageButton}
-                      disabled={isProcessing || isSpeaking || isRecording}
+                      disabled={isProcessing || isSpeaking}
                       className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
                     >
                       🎤 語音練習 Pitch
@@ -613,6 +643,21 @@ export default function Home() {
                     <p className="text-sm text-gray-500 mt-2">
                       準備好後，點擊開始朗讀剛才生成的 pitch
                     </p>
+                  </>
+                )}
+
+                {/* 練習 Pitch 錄音中狀態 */}
+                {currentStage === 'practice-pitch' && isRecording && (
+                  <>
+                    <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4">
+                      <div className="flex items-center justify-center space-x-3">
+                        <div className="w-4 h-4 bg-red-500 rounded-full recording-pulse"></div>
+                        <p className="text-red-600 font-semibold text-lg">🎙️ 錄音中 - 練習 Pitch</p>
+                      </div>
+                      <p className="text-sm text-gray-600 text-center mt-2">
+                        朗讀剛才生成的 pitch，說完後點擊下方紅色按鈕停止
+                      </p>
+                    </div>
                   </>
                 )}
 
