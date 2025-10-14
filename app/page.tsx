@@ -175,8 +175,12 @@ export default function Home() {
         setGeneratedPitch(pitch)
       }
 
-      // 如果是 practice-pitch 階段，嘗試提取評分
-      if (currentStage === 'practice-pitch' && nextStage === 'practice-again') {
+      // 自動觸發評分階段
+      if (currentStage === 'practice-pitch' && nextStage === 'evaluation') {
+        // 自動觸發 evaluation 階段
+        await triggerStageAction('evaluation')
+      } else if (currentStage === 'evaluation' && nextStage === 'practice-again') {
+        // 提取評分數據
         extractScoresFromResponse(reply)
       }
 
@@ -445,15 +449,15 @@ export default function Home() {
   // 取得階段標籤
   const getStageLabel = (stage: ConversationStage): string => {
     const labels: Record<ConversationStage, string> = {
-      'upload': '上傳作品照片 Upload Your Design',
-      'intro': 'AI 教練介紹 Introduction',
-      'qa-improve': '回答問題與細節 Add Details',
-      'confirm-summary': '確認設計重點 Confirm Summary',
-      'generate-pitch': '生成 Pitch 稿 Generate Pitch',
-      'practice-pitch': '練習 Pitch Practice Pitch',
-      'practice-again': '練習完成選擇 Practice Again',
-      'evaluation': '評分與回饋 Evaluation',
-      'keywords': '關鍵字筆記 Keywords',
+      'upload': '上傳作品照片 / Upload Your Design',
+      'intro': 'AI 教練介紹 / Introduction',
+      'qa-improve': '回答問題與細節 / Add Details',
+      'confirm-summary': '確認設計重點 / Confirm Summary',
+      'generate-pitch': '生成 Pitch 稿 / Generate Pitch',
+      'practice-pitch': '練習 Pitch / Practice Pitch',
+      'practice-again': '練習完成選擇 / Practice Again',
+      'evaluation': '評分與回饋 / Evaluation',
+      'keywords': '關鍵字筆記 / Keywords',
     }
     return labels[stage] || stage
   }
@@ -588,10 +592,10 @@ export default function Home() {
                       disabled={isProcessing || isSpeaking}
                       className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
-                      📤 確認上傳作品
+                      📤 確認上傳作品 / Confirm Upload
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      AI 教練會先觀察您的作品並開始引導
+                      AI 教練會先觀察您的作品並開始引導 / AI coach will observe your work and guide you
                     </p>
                   </>
                 )}
@@ -608,12 +612,12 @@ export default function Home() {
                           : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600'
                       }`}
                     >
-                      {isRecording ? '🔴 停止錄音' : '🎤 自由分享'}
+                      {isRecording ? '🔴 停止錄音 / Stop Recording' : '🎤 自由分享 / Free Sharing'}
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
                       {isRecording 
-                        ? '正在錄音中... 說完後點擊按鈕停止錄音' 
-                        : '點擊後開始錄音，自由分享您的設計想法'
+                        ? '正在錄音中... 說完後點擊按鈕停止錄音 / Recording... Click to stop after speaking' 
+                        : '點擊後開始錄音，自由分享您的設計想法 / Click to start recording and share your design ideas'
                       }
                     </p>
                   </>
@@ -632,12 +636,12 @@ export default function Home() {
                           : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600'
                       }`}
                     >
-                      {isRecording ? '🔴 停止錄音' : '🎤 回答問題/增加細節'}
+                      {isRecording ? '🔴 停止錄音 / Stop Recording' : '🎤 回答問題/增加細節 / Answer Questions'}
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
                       {isRecording 
-                        ? '正在錄音中... 說完後點擊按鈕停止錄音' 
-                        : '點擊後開始錄音，回答 AI 提出的問題'
+                        ? '正在錄音中... 說完後點擊按鈕停止錄音 / Recording... Click to stop after speaking' 
+                        : '點擊後開始錄音，回答 AI 提出的問題 / Click to start recording and answer AI questions'
                       }
                     </p>
                   </>
@@ -652,18 +656,18 @@ export default function Home() {
                         disabled={isProcessing || isSpeaking}
                         className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                       >
-                        🔄 重新描述作品
+                        🔄 重新描述作品 / Redescribe
                       </button>
                       <button
                         onClick={() => handleConfirmStageButton('confirm')}
                         disabled={isProcessing || isSpeaking}
                         className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                       >
-                        ✅ 確認生成 3 分鐘 Pitch
+                        ✅ 確認生成 3 分鐘 Pitch / Confirm Generate 3-min Pitch
                       </button>
                     </div>
                     <p className="text-sm text-gray-500 mt-2 text-center">
-                      如果不滿意重點整理，可以重新描述；確認無誤後生成完整 pitch 稿
+                      如果不滿意重點整理，可以重新描述；確認無誤後生成完整 pitch 稿 / Redescribe if unsatisfied; Generate pitch after confirmation
                     </p>
                   </>
                 )}
@@ -672,18 +676,18 @@ export default function Home() {
                 {currentStage === 'generate-pitch' && (
                   <>
                     <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 mb-4">
-                      <p className="text-green-600 font-medium">✅ Pitch 已生成完成</p>
-                      <p className="text-sm text-gray-500 mt-1">請先閱讀上方對話記錄中的 pitch 稿，準備好後開始練習</p>
+                      <p className="text-green-600 font-medium">✅ Pitch 已生成完成 / Pitch Generated Successfully</p>
+                      <p className="text-sm text-gray-500 mt-1">請先閱讀上方對話記錄中的 pitch 稿，準備好後開始練習 / Read the pitch above and prepare to practice</p>
                     </div>
                     <button
                       onClick={handleStageButton}
                       disabled={isProcessing || isSpeaking}
                       className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
                     >
-                      🎤 開始練習 Pitch
+                      🎤 開始練習 Pitch / Start Practice
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      閱讀完 pitch 稿後，點擊開始練習
+                      閱讀完 pitch 稿後，點擊開始練習 / Click to start practice after reading
                     </p>
                   </>
                 )}
@@ -696,10 +700,10 @@ export default function Home() {
                       disabled={isProcessing || isSpeaking}
                       className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
                     >
-                      🎤 開始語音練習 Pitch
+                      🎤 開始語音練習 Pitch / Start Voice Practice
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      準備好後，點擊開始朗讀剛才生成的 pitch
+                      準備好後，點擊開始朗讀剛才生成的 pitch / Click to start reading the generated pitch
                     </p>
                   </>
                 )}
@@ -712,10 +716,10 @@ export default function Home() {
                       disabled={isProcessing || isSpeaking}
                       className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-8 py-4 rounded-full font-semibold text-lg recording-pulse transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
-                      🔴 停止錄音
+                      🔴 停止錄音 / Stop Recording
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      正在錄音中... 說完後點擊按鈕停止錄音
+                      正在錄音中... 說完後點擊按鈕停止錄音 / Recording... Click to stop after speaking
                     </p>
                   </>
                 )}
@@ -727,7 +731,7 @@ export default function Home() {
                     {evaluationScores && (
                       <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
                         <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">
-                          📊 Pitch 表達技巧評分
+                          📊 Pitch 表達技巧評分 / Pitch Presentation Skills Evaluation
                         </h3>
                         <div className="space-y-4">
                           {/* Originality */}
@@ -823,7 +827,7 @@ export default function Home() {
                         disabled={isProcessing || isSpeaking}
                         className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                       >
-                        🔄 再次練習 Pitch
+                        🔄 再次練習 Pitch / Practice Again
                       </button>
                       <button
                         onClick={async () => {
@@ -832,11 +836,11 @@ export default function Home() {
                         disabled={isProcessing || isSpeaking}
                         className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                       >
-                        📝 生成關鍵字提點
+                        📝 生成關鍵字提點 / Generate Keywords
                       </button>
                     </div>
                     <p className="text-sm text-gray-500 mt-2 text-center">
-                      可以再次練習或直接生成關鍵字筆記
+                      可以再次練習或直接生成關鍵字筆記 / Practice again or generate keywords
                     </p>
                   </>
                 )}
@@ -849,10 +853,10 @@ export default function Home() {
                       disabled={isProcessing || isSpeaking}
                       className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-yellow-600 hover:to-amber-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
-                      📝 生成關鍵字提點
+                      📝 生成關鍵字提點 / Generate Keywords
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      點擊生成可複製的關鍵字筆記
+                      點擊生成可複製的關鍵字筆記 / Click to generate copyable keyword notes
                     </p>
                   </>
                 )}
@@ -862,10 +866,10 @@ export default function Home() {
                   <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4">
                     <div className="flex items-center justify-center space-x-3">
                       <div className="w-4 h-4 bg-red-500 rounded-full recording-pulse"></div>
-                      <p className="text-red-600 font-semibold text-lg">🎙️ 錄音中...</p>
+                      <p className="text-red-600 font-semibold text-lg">🎙️ 錄音中... / Recording...</p>
                     </div>
                     <p className="text-sm text-gray-600 text-center mt-2">
-                      說完後點擊下方麥克風停止錄音
+                      說完後點擊下方麥克風停止錄音 / Click microphone below to stop after speaking
                     </p>
                   </div>
                 )}
@@ -874,7 +878,7 @@ export default function Home() {
                 {isProcessing && (
                   <div className="flex items-center justify-center space-x-3 py-4">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    <p className="text-gray-600 font-medium">AI 處理中...</p>
+                    <p className="text-gray-600 font-medium">AI 處理中... / AI Processing...</p>
                   </div>
                 )}
 
@@ -885,10 +889,10 @@ export default function Home() {
                       <svg className="w-6 h-6 text-purple-500 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                       </svg>
-                      <p className="text-purple-600 font-semibold text-lg">🔊 AI 教練說話中...</p>
+                      <p className="text-purple-600 font-semibold text-lg">🔊 AI 教練說話中... / AI Coach Speaking...</p>
                     </div>
                     <p className="text-sm text-gray-600 text-center mt-2">
-                      請仔細聆聽
+                      請仔細聆聽 / Please listen carefully
                     </p>
                   </div>
                 )}
@@ -898,7 +902,7 @@ export default function Home() {
               {currentStage !== 'upload' && !isRecording && !isProcessing && !isSpeaking && (
                 <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                   <p className="text-sm text-blue-700">
-                    <strong>當前階段：</strong> {getStageLabel(currentStage)}
+                    <strong>當前階段 / Current Stage：</strong> {getStageLabel(currentStage)}
                   </p>
                 </div>
               )}
@@ -939,7 +943,7 @@ export default function Home() {
                   </svg>
                 </button>
                 
-                <p className="mt-4 text-white text-sm">點擊圓形按鈕拍照</p>
+                <p className="mt-4 text-white text-sm">點擊圓形按鈕拍照 / Click circle button to take photo</p>
               </div>
 
               {/* 隱藏的 canvas 用於捕捉畫面 */}
@@ -954,21 +958,21 @@ export default function Home() {
           <div className="text-white">
             {userTranscript && isRecording && (
               <div className="subtitle-display">
-                <p className="text-sm opacity-80 mb-2">你正在說：</p>
+                <p className="text-sm opacity-80 mb-2">你正在說 / You are saying：</p>
                 <p className="text-lg font-medium">{userTranscript}</p>
               </div>
             )}
             
             {currentSubtitle && isSpeaking && (
               <div className="subtitle-display">
-                <p className="text-sm opacity-80 mb-2">教練說：</p>
+                <p className="text-sm opacity-80 mb-2">教練說 / Coach says：</p>
                 <p className="text-lg font-medium">{currentSubtitle}</p>
               </div>
             )}
             
             {!userTranscript && !currentSubtitle && (
               <div className="text-center py-8">
-                <p className="text-xl opacity-80">字幕會在這裡即時顯示</p>
+                <p className="text-xl opacity-80">字幕會在這裡即時顯示 / Subtitles will appear here in real-time</p>
               </div>
             )}
           </div>
@@ -981,8 +985,8 @@ export default function Home() {
           
           {messages.length === 0 ? (
             <div className="text-center text-gray-400 py-12">
-              <p>上傳作品照片後點擊按鈕開始</p>
-              <p className="text-sm mt-2">AI 教練會引導您完成英語 pitch 練習</p>
+              <p>上傳作品照片後點擊按鈕開始 / Upload photos and click button to start</p>
+              <p className="text-sm mt-2">AI 教練會引導您完成英語 pitch 練習 / AI coach will guide you through English pitch practice</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -1017,7 +1021,7 @@ export default function Home() {
         {/* 關鍵字筆記顯示區域 */}
         {currentStage === 'keywords' && generatedPitch && (
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">📝 Pitch 關鍵字提點</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">📝 Pitch 關鍵字提點 / Pitch Keywords</h2>
             <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap font-mono text-sm">
               {messages[messages.length - 1]?.content || ''}
             </div>
@@ -1029,61 +1033,61 @@ export default function Home() {
                 }}
                 className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-all"
               >
-                📋 複製關鍵字筆記
+                📋 複製關鍵字筆記 / Copy Keywords
               </button>
               <button
                 onClick={handleStageButton}
                 disabled={isProcessing || isSpeaking}
                 className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
               >
-                🔄 重新上傳新作品
+                🔄 重新上傳新作品 / Upload New Work
               </button>
             </div>
             <p className="text-sm text-gray-500 mt-2 text-center">
-              完成練習！可以複製筆記或重新開始新的作品練習
+              完成練習！可以複製筆記或重新開始新的作品練習 / Practice complete! Copy notes or start new work practice
             </p>
           </div>
         )}
 
         {/* 流程說明 */}
         <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">📚 Pitch 練習流程</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">📚 Pitch 練習流程 / Pitch Practice Flow</h3>
           <div className="space-y-2 text-sm text-gray-700">
             <div className={`flex items-center ${currentStage === 'upload' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2">{currentStage === 'upload' ? '▶️' : '✓'}</span>
-              <span>1. 上傳作品照片 → 點擊「開始練習 Pitch」</span>
+              <span>1. 上傳作品照片 → 點擊「開始練習 Pitch」/ Upload photos → Click "Start Practice Pitch"</span>
             </div>
             <div className="flex items-center">
               <span className="mr-2">{currentStage !== 'upload' ? '✓' : '○'}</span>
-              <span>2. 🎤 自由描述作品（想到什麼說什麼）</span>
+              <span>2. 🎤 自由描述作品（想到什麼說什麼）/ Free description (say what comes to mind)</span>
             </div>
             <div className={`flex items-center ${currentStage === 'qa-improve' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2">{currentStage === 'qa-improve' ? '▶️' : ['confirm-summary', 'generate-pitch', 'practice-pitch', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <span>3. 🎤 回答問題 / 增加細節</span>
+              <span>3. 🎤 回答問題 / 增加細節 / Answer questions / Add details</span>
             </div>
             <div className={`flex items-center ${currentStage === 'confirm-summary' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2">{currentStage === 'confirm-summary' ? '▶️' : ['generate-pitch', 'practice-pitch', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <span>4. 確認設計重點 → 點擊「確認生成 3 分鐘 Pitch」</span>
+              <span>4. 確認設計重點 → 點擊「確認生成 3 分鐘 Pitch」/ Confirm design focus → Click "Confirm Generate 3-min Pitch"</span>
             </div>
             <div className={`flex items-center ${currentStage === 'practice-pitch' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2">{currentStage === 'practice-pitch' ? '▶️' : ['practice-again', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <span>5. 🎤 語音練習 Pitch</span>
+              <span>5. 🎤 語音練習 Pitch / Voice practice Pitch</span>
             </div>
             <div className={`flex items-center ${currentStage === 'practice-again' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2">{currentStage === 'practice-again' ? '▶️' : ['evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <span>6. 查看評分 → 選擇「再次練習」或「生成關鍵字提點」</span>
+              <span>6. 查看評分 → 選擇「再次練習」或「生成關鍵字提點」/ View scores → Choose "Practice Again" or "Generate Keywords"</span>
             </div>
             <div className={`flex items-center ${currentStage === 'evaluation' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2">{currentStage === 'evaluation' ? '▶️' : currentStage === 'keywords' ? '✓' : '○'}</span>
-              <span>7. 生成關鍵字筆記</span>
+              <span>7. 生成關鍵字筆記 / Generate keyword notes</span>
             </div>
             <div className={`flex items-center ${currentStage === 'keywords' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2">{currentStage === 'keywords' ? '▶️' : '○'}</span>
-              <span>8. 📝 查看關鍵字筆記 → 複製筆記或重新開始</span>
+              <span>8. 📝 查看關鍵字筆記 → 複製筆記或重新開始 / View keyword notes → Copy notes or restart</span>
             </div>
             <div className="flex items-center">
               <span className="mr-2">🔄</span>
-              <span>9. 點擊「重新上傳新作品」→ 重新開始完整流程</span>
+              <span>9. 點擊「重新上傳新作品」→ 重新開始完整流程 / Click "Upload New Work" → Restart complete flow</span>
             </div>
           </div>
         </div>

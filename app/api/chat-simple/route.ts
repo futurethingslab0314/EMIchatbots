@@ -173,8 +173,11 @@ export async function POST(request: NextRequest) {
     } else if (currentStage === 'confirm-summary' && (assistantReply.includes('Pitch') || assistantReply.includes('pitch'))) {
       // 確認重點後，生成 Pitch，轉到 generate-pitch 階段
       nextStage = 'generate-pitch'
-    } else if (currentStage === 'practice-pitch' && (assistantReply.includes('評分') || assistantReply.includes('rubric') || assistantReply.includes('Pronunciation') || assistantReply.includes('Originality'))) {
-      // 練習完成後，轉到選擇階段
+    } else if (currentStage === 'practice-pitch') {
+      // 學生完成 pitch 練習，自動觸發評分
+      nextStage = 'evaluation'
+    } else if (currentStage === 'evaluation') {
+      // 評分完成，轉到選擇階段
       nextStage = 'practice-again'
     }
 
