@@ -9,6 +9,18 @@ interface Message {
   timestamp: Date
 }
 
+// 對話階段定義
+type ConversationStage = 
+  | 'upload'           // 上傳照片階段
+  | 'intro'            // Bot 介紹並鼓勵
+  | 'free-describe'    // 學生自由描述作品
+  | 'qa-improve'       // Bot 追問細節
+  | 'confirm-summary'  // 確認設計重點
+  | 'generate-pitch'   // 生成 3 分鐘 pitch
+  | 'practice-pitch'   // 學生練習 pitch
+  | 'evaluation'       // Bot 評分
+  | 'keywords'         // 生成關鍵字筆記
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isRecording, setIsRecording] = useState(false)
@@ -17,11 +29,11 @@ export default function Home() {
   const [currentSubtitle, setCurrentSubtitle] = useState('')
   const [userTranscript, setUserTranscript] = useState('')
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
-  const [conversationStarted, setConversationStarted] = useState(false)
-  const [imagesUploaded, setImagesUploaded] = useState(false) // 新增：追蹤是否已上傳圖片
+  const [currentStage, setCurrentStage] = useState<ConversationStage>('upload')
   const [threadId, setThreadId] = useState<string | null>(null)
   const [showCamera, setShowCamera] = useState(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
+  const [generatedPitch, setGeneratedPitch] = useState('')
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -112,18 +124,13 @@ export default function Home() {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'recording.webm')
       formData.append('messages', JSON.stringify(messages))
-      formData.append('hasImages', uploadedImages.length > 0 ? 'true' : 'false')
-      formData.append('conversationStarted', conversationStarted ? 'true' : 'false')
-      formData.append('imagesUploaded', imagesUploaded ? 'true' : 'false')
+      formData.append('images', JSON.stringify(uploadedImages))
+      formData.append('stage', currentStage)
+      formData.append('triggerStage', 'false')
       
-      // 傳送圖片（讓 OpenAI 可以在整個對話中看到作品照片）
-      if (uploadedImages.length > 0) {
-        formData.append('images', JSON.stringify(uploadedImages))
-      }
-      
-      // 傳送 threadId（用於維持對話連續性）
-      if (threadId) {
-        formData.append('threadId', threadId)
+      // 如果有生成的 pitch，也傳送（用於評分）
+      if (generatedPitch) {
+        formData.append('generatedPitch', generatedPitch)
       }
 
       // 使用簡化版 API（避免 Buffer 類型問題）
@@ -133,12 +140,7 @@ export default function Home() {
         },
       })
 
-      const { transcription, reply, audioUrl, threadId: newThreadId } = response.data
-
-      // 儲存 threadId
-      if (newThreadId && !threadId) {
-        setThreadId(newThreadId)
-      }
+      const { transcription, reply, audioUrl, nextStage, pitch } = response.data
 
       // 添加使用者訊息
       const userMessage: Message = {
@@ -156,13 +158,19 @@ export default function Home() {
       }
       setMessages(prev => [...prev, assistantMessage])
 
+      // 更新階段
+      if (nextStage) {
+        setCurrentStage(nextStage)
+      }
+
+      // 儲存生成的 pitch
+      if (pitch) {
+        setGeneratedPitch(pitch)
+      }
+
       // 播放語音回覆並顯示字幕
       if (audioUrl) {
         await playAudioWithSubtitles(audioUrl, reply)
-      }
-
-      if (!conversationStarted) {
-        setConversationStarted(true)
       }
     } catch (error) {
       console.error('處理音訊時發生錯誤:', error)
@@ -220,34 +228,22 @@ export default function Home() {
     setUploadedImages(prev => prev.filter((_, i) => i !== index))
   }
 
-  // 確認上傳圖片（觸發步驟 1）
-  const confirmUpload = () => {
-    if (uploadedImages.length === 0) {
-      alert('請至少上傳一張作品照片')
-      return
-    }
-    setImagesUploaded(true)
-    setConversationStarted(true)
-    
-    // 自動觸發 bot 的第一句話（步驟 1）
-    triggerBotIntroduction()
-  }
-
-  // 觸發 bot 介紹（步驟 1）
-  const triggerBotIntroduction = async () => {
+  // 觸發不同階段的 Bot 回應
+  const triggerStageAction = async (stage: ConversationStage, userInput?: string) => {
     setIsProcessing(true)
     
     try {
       const formData = new FormData()
-      // 創建一個空的音訊檔案（模擬使用者觸發）
       const emptyAudio = new Blob([new Uint8Array(0)], { type: 'audio/webm' })
       formData.append('audio', emptyAudio, 'empty.webm')
-      formData.append('messages', JSON.stringify([]))
-      formData.append('hasImages', 'true')
-      formData.append('conversationStarted', 'false')
-      formData.append('imagesUploaded', 'true')
+      formData.append('messages', JSON.stringify(messages))
       formData.append('images', JSON.stringify(uploadedImages))
-      formData.append('triggerIntro', 'true') // 特殊標記：觸發介紹
+      formData.append('stage', stage)
+      formData.append('triggerStage', 'true')
+      
+      if (userInput) {
+        formData.append('userInput', userInput)
+      }
 
       const response = await axios.post('/api/chat-simple', formData, {
         headers: {
@@ -255,25 +251,66 @@ export default function Home() {
         },
       })
 
-      const { reply, audioUrl } = response.data
+      const { reply, audioUrl, nextStage, pitch } = response.data
 
-      // 添加助理的介紹訊息
+      // 添加助理訊息
       const assistantMessage: Message = {
         role: 'assistant',
         content: reply,
         timestamp: new Date(),
       }
-      setMessages([assistantMessage])
+      setMessages(prev => [...prev, assistantMessage])
+
+      // 更新階段
+      if (nextStage) {
+        setCurrentStage(nextStage)
+      }
+
+      // 儲存生成的 pitch
+      if (pitch) {
+        setGeneratedPitch(pitch)
+      }
 
       // 播放語音
       if (audioUrl) {
         await playAudioWithSubtitles(audioUrl, reply)
       }
     } catch (error) {
-      console.error('觸發介紹時發生錯誤:', error)
-      alert('無法啟動對話，請重新整理頁面')
+      console.error('觸發階段動作時發生錯誤:', error)
+      alert('處理時發生錯誤，請稍後再試')
     } finally {
       setIsProcessing(false)
+    }
+  }
+
+  // 階段按鈕處理
+  const handleStageButton = () => {
+    switch (currentStage) {
+      case 'upload':
+        // 開始練習 pitch
+        if (uploadedImages.length === 0) {
+          alert('請至少上傳一張作品照片')
+          return
+        }
+        triggerStageAction('intro')
+        break
+      
+      case 'confirm-summary':
+        // 確認生成 3 mins pitch
+        triggerStageAction('generate-pitch')
+        break
+      
+      case 'generate-pitch':
+        // 已生成 pitch，不需要按鈕動作（改用錄音練習）
+        break
+      
+      case 'evaluation':
+        // 生成關鍵字提點
+        triggerStageAction('keywords')
+        break
+      
+      default:
+        break
     }
   }
 
@@ -343,6 +380,38 @@ export default function Home() {
       }
     }
   }, [cameraStream])
+
+  // 取得階段標籤
+  const getStageLabel = (stage: ConversationStage): string => {
+    const labels: Record<ConversationStage, string> = {
+      'upload': '上傳作品照片',
+      'intro': 'AI 教練介紹',
+      'free-describe': '自由描述作品',
+      'qa-improve': '回答問題與細節',
+      'confirm-summary': '確認設計重點',
+      'generate-pitch': '生成 Pitch 稿',
+      'practice-pitch': '練習 Pitch',
+      'evaluation': '評分與回饋',
+      'keywords': '關鍵字筆記',
+    }
+    return labels[stage] || stage
+  }
+
+  // 取得麥克風按鈕提示文字
+  const getMicButtonLabel = (): string => {
+    const labels: Record<ConversationStage, string> = {
+      'upload': '點擊麥克風開始對話',
+      'intro': '等待 AI 教練介紹...',
+      'free-describe': '🎤 自由描述作品',
+      'qa-improve': '🎤 回答問題 / 增加細節',
+      'confirm-summary': '確認後點擊上方按鈕',
+      'generate-pitch': '等待 Pitch 生成...',
+      'practice-pitch': '🎤 語音練習 Pitch',
+      'evaluation': '等待評分...',
+      'keywords': '查看關鍵字筆記',
+    }
+    return labels[currentStage] || '點擊麥克風說話'
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
@@ -422,32 +491,61 @@ export default function Home() {
             </div>
           )}
 
-          {/* 上傳確認按鈕 */}
-          {uploadedImages.length > 0 && !imagesUploaded && (
-            <div className="mt-6 text-center">
-              <button
-                onClick={confirmUpload}
-                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg"
-              >
-                ✨ 開始 Pitch 練習
-              </button>
-              <p className="text-sm text-gray-500 mt-2">
-                點擊後，AI 教練會開始引導您進行作品介紹
-              </p>
-            </div>
-          )}
+          {/* 階段按鈕 */}
+          {uploadedImages.length > 0 && (
+            <div className="mt-6">
+              {currentStage === 'upload' && (
+                <div className="text-center">
+                  <button
+                    onClick={handleStageButton}
+                    disabled={isProcessing}
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                  >
+                    ✨ 開始練習 Pitch
+                  </button>
+                  <p className="text-sm text-gray-500 mt-2">
+                    點擊後，AI 教練會開始引導您進行作品介紹
+                  </p>
+                </div>
+              )}
 
-          {/* 已開始對話的提示 */}
-          {imagesUploaded && (
-            <div className="mt-4 bg-green-50 border-l-4 border-green-500 p-4 rounded">
-              <div className="flex items-center">
-                <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <p className="text-sm text-green-700 font-medium">
-                  已上傳 {uploadedImages.length} 張照片 - 使用麥克風與 AI 教練對話
-                </p>
-              </div>
+              {currentStage === 'confirm-summary' && (
+                <div className="text-center">
+                  <button
+                    onClick={handleStageButton}
+                    disabled={isProcessing}
+                    className="bg-gradient-to-r from-green-500 to-teal-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-green-600 hover:to-teal-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                  >
+                    ✅ 確認生成 3 分鐘 Pitch
+                  </button>
+                  <p className="text-sm text-gray-500 mt-2">
+                    確認設計重點後，AI 會為您生成完整的英文 pitch 稿
+                  </p>
+                </div>
+              )}
+
+              {currentStage === 'evaluation' && (
+                <div className="text-center">
+                  <button
+                    onClick={handleStageButton}
+                    disabled={isProcessing}
+                    className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-yellow-600 hover:to-orange-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                  >
+                    📝 生成 Pitch 關鍵字提點
+                  </button>
+                  <p className="text-sm text-gray-500 mt-2">
+                    生成可複製的關鍵字筆記，方便您製作小抄
+                  </p>
+                </div>
+              )}
+
+              {currentStage !== 'upload' && (
+                <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                  <p className="text-sm text-blue-700">
+                    <strong>當前階段：</strong> {getStageLabel(currentStage)}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -560,11 +658,17 @@ export default function Home() {
         <div className="flex justify-center items-center space-x-4">
           <button
             onClick={isRecording ? stopRecording : startRecording}
-            disabled={isProcessing || isSpeaking}
+            disabled={
+              isProcessing || 
+              isSpeaking || 
+              !['free-describe', 'qa-improve', 'practice-pitch'].includes(currentStage)
+            }
             className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed ${
               isRecording
                 ? 'bg-red-500 recording-pulse'
-                : 'bg-blue-500 hover:bg-blue-600'
+                : ['free-describe', 'qa-improve', 'practice-pitch'].includes(currentStage)
+                  ? 'bg-blue-500 hover:bg-blue-600'
+                  : 'bg-gray-400'
             }`}
           >
             {isRecording ? (
@@ -581,16 +685,21 @@ export default function Home() {
 
           <div className="text-center">
             {isProcessing && (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center space-x-2">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
                 <p className="text-gray-600">處理中...</p>
               </div>
             )}
             {isSpeaking && (
-              <p className="text-gray-600">🔊 播放中...</p>
+              <p className="text-gray-600">🔊 AI 教練說話中...</p>
             )}
             {!isRecording && !isProcessing && !isSpeaking && (
-              <p className="text-gray-600">點擊麥克風開始說話</p>
+              <div>
+                <p className="text-gray-600 font-medium">{getMicButtonLabel()}</p>
+                {['free-describe', 'qa-improve', 'practice-pitch'].includes(currentStage) && (
+                  <p className="text-sm text-gray-500 mt-1">點擊麥克風後開始說話</p>
+                )}
+              </div>
             )}
             {isRecording && (
               <p className="text-red-500 font-semibold">🎙️ 錄音中...</p>
@@ -598,18 +707,56 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 提示訊息 */}
-        <div className="mt-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
+        {/* 關鍵字筆記顯示區域 */}
+        {currentStage === 'keywords' && generatedPitch && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">📝 Pitch 關鍵字提點</h2>
+            <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap font-mono text-sm">
+              {messages[messages.length - 1]?.content || ''}
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-blue-700">
-                <strong>使用提示：</strong> 先上傳作品照片，然後點擊麥克風開始對話。我會引導您逐步完成設計作品的英語 pitch 練習。
-              </p>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
+                alert('✅ 已複製到剪貼簿！')
+              }}
+              className="mt-4 w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-all"
+            >
+              📋 複製關鍵字筆記
+            </button>
+          </div>
+        )}
+
+        {/* 流程說明 */}
+        <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-6 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">📚 Pitch 練習流程</h3>
+          <div className="space-y-2 text-sm text-gray-700">
+            <div className={`flex items-center ${currentStage === 'upload' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2">{currentStage === 'upload' ? '▶️' : '✓'}</span>
+              <span>1. 上傳作品照片 → 點擊「開始練習 Pitch」</span>
+            </div>
+            <div className={`flex items-center ${currentStage === 'free-describe' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2">{currentStage === 'free-describe' ? '▶️' : currentStage !== 'upload' ? '✓' : '○'}</span>
+              <span>2. 🎤 自由描述作品（想到什麼說什麼）</span>
+            </div>
+            <div className={`flex items-center ${currentStage === 'qa-improve' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2">{currentStage === 'qa-improve' ? '▶️' : ['confirm-summary', 'generate-pitch', 'practice-pitch', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
+              <span>3. 🎤 回答問題 / 增加細節</span>
+            </div>
+            <div className={`flex items-center ${currentStage === 'confirm-summary' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2">{currentStage === 'confirm-summary' ? '▶️' : ['generate-pitch', 'practice-pitch', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
+              <span>4. 確認設計重點 → 點擊「確認生成 3 分鐘 Pitch」</span>
+            </div>
+            <div className={`flex items-center ${currentStage === 'practice-pitch' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2">{currentStage === 'practice-pitch' ? '▶️' : ['evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
+              <span>5. 🎤 語音練習 Pitch</span>
+            </div>
+            <div className={`flex items-center ${currentStage === 'evaluation' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2">{currentStage === 'evaluation' ? '▶️' : currentStage === 'keywords' ? '✓' : '○'}</span>
+              <span>6. 查看評分 → 點擊「生成關鍵字提點」</span>
+            </div>
+            <div className={`flex items-center ${currentStage === 'keywords' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2">{currentStage === 'keywords' ? '▶️' : '○'}</span>
+              <span>7. 📝 複製關鍵字筆記</span>
             </div>
           </div>
         </div>
