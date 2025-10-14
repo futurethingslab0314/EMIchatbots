@@ -13,7 +13,6 @@ interface Message {
 type ConversationStage = 
   | 'upload'           // 上傳照片階段
   | 'intro'            // Bot 介紹並鼓勵
-  | 'free-describe'    // 學生自由描述作品
   | 'qa-improve'       // Bot 追問細節
   | 'confirm-summary'  // 確認設計重點
   | 'generate-pitch'   // 生成 3 分鐘 pitch
@@ -300,10 +299,6 @@ export default function Home() {
         startRecording()
         break
       
-      case 'free-describe':
-        // 描述完畢，等待 bot 提問
-        // 不需要按鈕動作，錄音完成後自動處理
-        break
       
       case 'qa-improve':
         // 開始回答問題 → 啟動錄音
@@ -407,7 +402,6 @@ export default function Home() {
     const labels: Record<ConversationStage, string> = {
       'upload': '上傳作品照片',
       'intro': 'AI 教練介紹',
-      'free-describe': '自由描述作品',
       'qa-improve': '回答問題與細節',
       'confirm-summary': '確認設計重點',
       'generate-pitch': '生成 Pitch 稿',
@@ -423,7 +417,6 @@ export default function Home() {
     const labels: Record<ConversationStage, string> = {
       'upload': '點擊麥克風開始對話',
       'intro': '等待 AI 教練介紹...',
-      'free-describe': '🎤 自由描述作品',
       'qa-improve': '🎤 回答問題 / 增加細節',
       'confirm-summary': '確認後點擊上方按鈕',
       'generate-pitch': '等待 Pitch 生成...',
@@ -825,8 +818,8 @@ export default function Home() {
               <span className="mr-2">{currentStage === 'upload' ? '▶️' : '✓'}</span>
               <span>1. 上傳作品照片 → 點擊「開始練習 Pitch」</span>
             </div>
-            <div className={`flex items-center ${currentStage === 'free-describe' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2">{currentStage === 'free-describe' ? '▶️' : currentStage !== 'upload' ? '✓' : '○'}</span>
+            <div className="flex items-center">
+              <span className="mr-2">{currentStage !== 'upload' ? '✓' : '○'}</span>
               <span>2. 🎤 自由描述作品（想到什麼說什麼）</span>
             </div>
             <div className={`flex items-center ${currentStage === 'qa-improve' ? 'font-bold text-blue-600' : ''}`}>
