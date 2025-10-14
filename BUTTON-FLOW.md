@@ -21,17 +21,17 @@
 階段 2️⃣：Bot 介紹（自動）
 ├─ Bot：觀察作品，鼓勵學生
 ├─ 狀態：🔊 AI 教練說話中...
-└─ 按鈕：（說話完後自動變成）🎤 開始自由描述作品
+└─ 按鈕：（說話完後自動變成）🎤 自由分享
     ↓ 點擊
     
-階段 3️⃣：自由描述作品
+階段 3️⃣：自由分享作品
 ├─ 自動：啟動錄音
 ├─ 狀態：🎙️ 錄音中...（顯示停止按鈕）
-├─ 學生：說話描述作品
+├─ 學生：自由分享設計想法
 ├─ 點擊停止按鈕
 ├─ 自動：處理並發送給 AI
 ├─ Bot：聆聽理解，然後提出問題
-└─ 按鈕：（Bot 說完後自動變成）🎤 開始回答問題
+└─ 按鈕：（Bot 說完後自動變成）🎤 回答問題/增加細節
     ↓ 點擊
     
 階段 4️⃣：回答問題
@@ -48,7 +48,7 @@
 └─ 按鈕：🎤 開始語音練習 Pitch
     ↓ 點擊
     
-階段 6️⃣：練習 Pitch
+階段 6️⃣：語音練習 Pitch
 ├─ 自動：啟動錄音
 ├─ 學生：朗讀 pitch
 ├─ 點擊停止
@@ -71,10 +71,10 @@
 | 階段 | 按鈕文字 | 行數 | 顏色 | 動作 |
 |------|---------|------|------|------|
 | 1 | 📤 確認上傳作品 | 527 | 藍紫漸層 | 觸發 Bot 介紹 |
-| 2 | 🎤 開始自由描述作品 | 543 | 綠色漸層 | 啟動錄音 |
-| 4 | 🎤 開始回答問題 | 559 | 藍青漸層 | 啟動錄音 |
+| 2 | 🎤 自由分享 | 543 | 綠色漸層 | 啟動錄音 |
+| 4 | 🎤 回答問題/增加細節 | 559 | 藍青漸層 | 啟動錄音 |
 | 5 | ✅ 確認生成 3 分鐘 Pitch | 575 | 紫粉漸層 | 生成 Pitch |
-| 6 | 🎤 開始語音練習 Pitch | 591 | 橙紅漸層 | 啟動錄音 |
+| 6 | 🎤 語音練習 Pitch | 591 | 橙紅漸層 | 啟動錄音 |
 | 7 | 📝 生成關鍵字提點 | 607 | 黃色漸層 | 生成筆記 |
 | 8 | 📋 複製關鍵字筆記 | 724 | 藍色 | 複製文字 |
 
@@ -140,10 +140,10 @@ const STAGE_TRANSITIONS: Record<ConversationStage, ConversationStage> = {
 ```typescript
 // 第 520-613 行
 {currentStage === 'upload' && <button>📤 確認上傳作品</button>}
-{currentStage === 'intro' && <button>🎤 開始自由描述作品</button>}
-{currentStage === 'qa-improve' && <button>🎤 開始回答問題</button>}
+{currentStage === 'intro' && <button>🎤 自由分享</button>}
+{currentStage === 'qa-improve' && <button>🎤 回答問題/增加細節</button>}
 {currentStage === 'confirm-summary' && <button>✅ 確認生成 3 分鐘 Pitch</button>}
-{currentStage === 'practice-pitch' && <button>🎤 開始語音練習 Pitch</button>}
+{currentStage === 'practice-pitch' && <button>🎤 語音練習 Pitch</button>}
 {currentStage === 'evaluation' && <button>📝 生成關鍵字提點</button>}
 ```
 
@@ -155,15 +155,15 @@ const STAGE_TRANSITIONS: Record<ConversationStage, ConversationStage> = {
 1. 上傳 3 張照片
 2. 看到按鈕「📤 確認上傳作品」→ 點擊
 3. AI 說話... 聽完後
-4. 按鈕自動變成「🎤 開始自由描述作品」→ 點擊
+4. 按鈕自動變成「🎤 自由分享」→ 點擊
 5. 自動開始錄音 → 說話 → 點擊紅色按鈕停止
 6. AI 處理... 提出問題... 聽完後
-7. 按鈕自動變成「🎤 開始回答問題」→ 點擊
+7. 按鈕自動變成「🎤 回答問題/增加細節」→ 點擊
 8. 自動錄音 → 回答 → 停止
 9. AI 整理重點... 聽完後
 10. 按鈕自動變成「✅ 確認生成 3 分鐘 Pitch」→ 點擊
 11. AI 生成並朗讀 pitch... 聽完後
-12. 按鈕自動變成「🎤 開始語音練習 Pitch」→ 點擊
+12. 按鈕自動變成「🎤 語音練習 Pitch」→ 點擊
 13. 自動錄音 → 朗讀 pitch → 停止
 14. AI 評分... 聽完後
 15. 按鈕自動變成「📝 生成關鍵字提點」→ 點擊

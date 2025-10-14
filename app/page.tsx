@@ -532,7 +532,7 @@ export default function Home() {
                   </>
                 )}
 
-                {/* 階段 2: 開始自由描述 */}
+                {/* 階段 2: 自由分享 */}
                 {currentStage === 'intro' && !isRecording && !isSpeaking && (
                   <>
                     <button
@@ -540,15 +540,15 @@ export default function Home() {
                       disabled={isProcessing}
                       className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
-                      🎤 開始自由描述作品
+                      🎤 自由分享
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      點擊後開始錄音，想到什麼說什麼
+                      點擊後開始錄音，自由分享您的設計想法
                     </p>
                   </>
                 )}
 
-                {/* 階段 4: 開始回答問題 */}
+                {/* 階段 4: 回答問題/增加細節 */}
                 {currentStage === 'qa-improve' && !isRecording && !isSpeaking && (
                   <>
                     <button
@@ -556,7 +556,7 @@ export default function Home() {
                       disabled={isProcessing}
                       className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
-                      🎤 開始回答問題
+                      🎤 回答問題/增加細節
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
                       點擊後開始錄音，回答 AI 提出的問題
@@ -580,7 +580,7 @@ export default function Home() {
                   </>
                 )}
 
-                {/* 階段 7: 開始練習 Pitch */}
+                {/* 階段 7: 語音練習 Pitch */}
                 {currentStage === 'practice-pitch' && !isRecording && !isSpeaking && (
                   <>
                     <button
@@ -588,7 +588,7 @@ export default function Home() {
                       disabled={isProcessing}
                       className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
                     >
-                      🎤 開始語音練習 Pitch
+                      🎤 語音練習 Pitch
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
                       準備好後，點擊開始朗讀剛才生成的 pitch
