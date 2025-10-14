@@ -167,7 +167,8 @@ export async function POST(request: NextRequest) {
       // 學生錄音完成後，直接轉到 qa-improve 階段
       // AI 會在這個階段提出問題
       nextStage = 'qa-improve'
-    } else if (currentStage === 'qa-improve' && (assistantReply.toLowerCase().includes('summary') || assistantReply.includes('整理') || assistantReply.includes('重點'))) {
+    } else if (currentStage === 'qa-improve') {
+      // 學生已回答問題，直接進入整理階段
       nextStage = 'confirm-summary'
     } else if (currentStage === 'confirm-summary' && (assistantReply.includes('Pitch') || assistantReply.includes('pitch'))) {
       // 確認重點後，生成 Pitch，轉到 generate-pitch 階段
