@@ -17,7 +17,7 @@ const STAGE_PROMPTS: Record<ConversationStage, string> = {
   'practice-pitch': '', // 學生練習 pitch，不需要特殊 prompt
   'practice-again': '', // 練習完成後的選擇階段，由前端按鈕處理
   'evaluation': '學生剛才練習了 pitch 的口語表達。請根據以下「發表技巧 rubric」評分（每項 20 分，總分 100）：\n\n1. **Originality**（原創性）：是否保持學生原本的設計概念和內容，含有多少%的AI生成內容 \n2.**Pronunciation**（發音清晰度）：英語發音是否清楚、專業術語是否正確\n3. **Engaging Tone**（表達吸引力）：是否有抑揚頓挫、重點是否有停頓、語氣是否吸引人\n4. **Content Delivery**（內容表達）：邏輯是否清楚、資訊是否完整、重點是否突出\n5. **Time Management**（時間掌控）：是否在 3 分鐘內、節奏是否適當\n\n【重要輸出格式】請務必在回應中包含以下格式的評分（以便系統自動生成圖表）：\nOriginality: [分數]/20\n Pronunciation: [分數]/20\nEngaging Tone: [分數]/20\nContent Delivery: [分數]/20\nTime Management: [分數]/20\n\n然後再給予具體的改進建議。評分重點是「口語表達技巧」，不是設計本身。保持正向鼓勵。',
-  'keywords': '生成一份簡潔的 Pitch 關鍵字提點筆記in english，格式適合複製到手機做小抄。包含：\n- 核心訊息（3-5 個重點）\n- 關鍵詞彙（中英對照，含詞彙表術語）\n- 結構提示（開場→過程→結果）\n- 記憶點（數字、引言、亮點）\n\n要簡短易記，方便學生快速瀏覽複習。',
+  'keywords': '根據剛才生成的 Pitch 內容，為學生製作一份實用的發表小抄筆記。\n\n【任務】基於實際的 Pitch 內容，提供發表時的小抄，包含：\n\n1. **核心重點句子**（3-5 個關鍵句子，中英對照）\n   - 從 Pitch 中提取最重要的表達句\n   - 提供中英文對照，方便記憶\n\n2. **關鍵詞彙**（設計專業術語，中英對照）\n   - 從 Pitch 中提取的專業設計詞彙\n   - 提供簡短定義或解釋\n\n3. **轉折連接詞**（避免忘詞的英文句子）\n   - 開場轉折：「First, let me introduce...」「To begin with...」\n   - 過程轉折：「Moving on to...」「Furthermore...」「Additionally...」\n   - 結尾轉折：「In conclusion...」「To summarize...」「Finally...」\n\n4. **記憶提示**（數字、重點提醒）\n   - 重要的數據或特徵\n   - 容易忘記的關鍵點\n\n【格式要求】\n- 簡潔明瞭，適合手機螢幕瀏覽\n- 中英對照，方便快速參考\n- 按發表順序排列\n- 重點突出，一目了然\n\n【重要】這是基於實際 Pitch 內容的實用小抄，不是評價摘要！',
 }
 
 // 階段轉換邏輯

@@ -295,6 +295,17 @@ export default function Home() {
     }
   }
 
+  // 處理確認階段按鈕（兩個選項）
+  const handleConfirmStageButton = async (action: 'confirm' | 'redescribe') => {
+    if (action === 'confirm') {
+      // 確認生成 3 mins pitch
+      await triggerStageAction('generate-pitch')
+    } else if (action === 'redescribe') {
+      // 重新描述作品，回到 qa-improve 階段
+      setCurrentStage('qa-improve')
+    }
+  }
+
   // 階段按鈕處理
   const handleStageButton = async () => {
     switch (currentStage) {
@@ -434,15 +445,15 @@ export default function Home() {
   // 取得階段標籤
   const getStageLabel = (stage: ConversationStage): string => {
     const labels: Record<ConversationStage, string> = {
-      'upload': '上傳作品照片',
-      'intro': 'AI 教練介紹',
-      'qa-improve': '回答問題與細節',
-      'confirm-summary': '確認設計重點',
-      'generate-pitch': '生成 Pitch 稿',
-      'practice-pitch': '練習 Pitch',
-      'practice-again': '練習完成選擇',
-      'evaluation': '評分與回饋',
-      'keywords': '關鍵字筆記',
+      'upload': '上傳作品照片 Upload Your Design',
+      'intro': 'AI 教練介紹 Introduction',
+      'qa-improve': '回答問題與細節 Add Details',
+      'confirm-summary': '確認設計重點 Confirm Summary',
+      'generate-pitch': '生成 Pitch 稿 Generate Pitch',
+      'practice-pitch': '練習 Pitch Practice Pitch',
+      'practice-again': '練習完成選擇 Practice Again',
+      'evaluation': '評分與回饋 Evaluation',
+      'keywords': '關鍵字筆記 Keywords',
     }
     return labels[stage] || stage
   }
@@ -450,15 +461,15 @@ export default function Home() {
   // 取得麥克風按鈕提示文字
   const getMicButtonLabel = (): string => {
     const labels: Record<ConversationStage, string> = {
-      'upload': '點擊麥克風開始對話',
+      'upload': '點擊麥克風開始對話 Start Conversation',
       'intro': '等待 AI 教練介紹...',
-      'qa-improve': '🎤 回答問題 / 增加細節',
-      'confirm-summary': '確認後點擊上方按鈕',
-      'generate-pitch': '等待 Pitch 生成...',
-      'practice-pitch': '🎤 語音練習 Pitch',
-      'practice-again': '選擇再次練習或生成筆記',
-      'evaluation': '等待評分...',
-      'keywords': '查看關鍵字筆記',
+      'qa-improve': '🎤 回答問題 / 增加細節 Add Details',
+      'confirm-summary': '確認後點擊上方按鈕 Confirm Summary',
+      'generate-pitch': '等待 Pitch 生成... Generate Pitch',
+      'practice-pitch': '🎤 語音練習 Practice Pitch',
+      'practice-again': '選擇再次練習或生成筆記 Practice Again',
+      'evaluation': '等待評分... Evaluation',
+      'keywords': '查看關鍵字筆記 Keywords',
     }
     return labels[currentStage] || '點擊麥克風說話'
   }
@@ -635,15 +646,24 @@ export default function Home() {
                 {/* 階段 5: 確認生成 Pitch */}
                 {currentStage === 'confirm-summary' && (
                   <>
-                    <button
-                      onClick={handleStageButton}
-                      disabled={isProcessing || isSpeaking}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
-                    >
-                      ✅ 確認生成 3 分鐘 Pitch
-                    </button>
-                    <p className="text-sm text-gray-500 mt-2">
-                      確認設計重點無誤後，AI 會為您生成完整 pitch 稿
+                    <div className="flex space-x-4 justify-center">
+                      <button
+                        onClick={() => handleConfirmStageButton('redescribe')}
+                        disabled={isProcessing || isSpeaking}
+                        className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                      >
+                        🔄 重新描述作品
+                      </button>
+                      <button
+                        onClick={() => handleConfirmStageButton('confirm')}
+                        disabled={isProcessing || isSpeaking}
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                      >
+                        ✅ 確認生成 3 分鐘 Pitch
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2 text-center">
+                      如果不滿意重點整理，可以重新描述；確認無誤後生成完整 pitch 稿
                     </p>
                   </>
                 )}
