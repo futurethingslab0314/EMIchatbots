@@ -325,6 +325,22 @@ export default function Home() {
         await triggerStageAction('keywords')
         break
       
+      case 'keywords':
+        // 重新開始 - 重置所有狀態
+        setCurrentStage('upload')
+        setUploadedImages([])
+        setMessages([])
+        setGeneratedPitch('')
+        setIsRecording(false)
+        setIsProcessing(false)
+        setIsSpeaking(false)
+        setUserTranscript('')
+        setCurrentSubtitle('')
+        // 清除文件輸入
+        const fileInput = document.getElementById('file-input') as HTMLInputElement
+        if (fileInput) fileInput.value = ''
+        break
+      
       default:
         break
     }
@@ -728,6 +744,33 @@ export default function Home() {
           </div>
         )}
 
+
+        {/* 即時字幕顯示 */}
+        <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl shadow-lg p-6 mb-6 min-h-[120px]">
+          <div className="text-white">
+            {userTranscript && isRecording && (
+              <div className="subtitle-display">
+                <p className="text-sm opacity-80 mb-2">你正在說：</p>
+                <p className="text-lg font-medium">{userTranscript}</p>
+              </div>
+            )}
+            
+            {currentSubtitle && isSpeaking && (
+              <div className="subtitle-display">
+                <p className="text-sm opacity-80 mb-2">教練說：</p>
+                <p className="text-lg font-medium">{currentSubtitle}</p>
+              </div>
+            )}
+            
+            {!userTranscript && !currentSubtitle && (
+              <div className="text-center py-8">
+                <p className="text-xl opacity-80">字幕會在這裡即時顯示</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+
         {/* 對話歷史 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 min-h-[300px] max-h-[400px] overflow-y-auto">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">💬 對話記錄</h2>
@@ -765,30 +808,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* 即時字幕顯示 */}
-        <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl shadow-lg p-6 mb-6 min-h-[120px]">
-          <div className="text-white">
-            {userTranscript && isRecording && (
-              <div className="subtitle-display">
-                <p className="text-sm opacity-80 mb-2">你正在說：</p>
-                <p className="text-lg font-medium">{userTranscript}</p>
-              </div>
-            )}
-            
-            {currentSubtitle && isSpeaking && (
-              <div className="subtitle-display">
-                <p className="text-sm opacity-80 mb-2">教練說：</p>
-                <p className="text-lg font-medium">{currentSubtitle}</p>
-              </div>
-            )}
-            
-            {!userTranscript && !currentSubtitle && (
-              <div className="text-center py-8">
-                <p className="text-xl opacity-80">字幕會在這裡即時顯示</p>
-              </div>
-            )}
-          </div>
-        </div>
 
 
         {/* 關鍵字筆記顯示區域 */}
@@ -798,15 +817,27 @@ export default function Home() {
             <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap font-mono text-sm">
               {messages[messages.length - 1]?.content || ''}
             </div>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
-                alert('✅ 已複製到剪貼簿！')
-              }}
-              className="mt-4 w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-all"
-            >
-              📋 複製關鍵字筆記
-            </button>
+            <div className="mt-4 flex space-x-4">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
+                  alert('✅ 已複製到剪貼簿！')
+                }}
+                className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-all"
+              >
+                📋 複製關鍵字筆記
+              </button>
+              <button
+                onClick={handleStageButton}
+                disabled={isProcessing || isSpeaking}
+                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+              >
+                🔄 重新上傳新作品
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mt-2 text-center">
+              完成練習！可以複製筆記或重新開始新的作品練習
+            </p>
           </div>
         )}
 
@@ -840,7 +871,11 @@ export default function Home() {
             </div>
             <div className={`flex items-center ${currentStage === 'keywords' ? 'font-bold text-blue-600' : ''}`}>
               <span className="mr-2">{currentStage === 'keywords' ? '▶️' : '○'}</span>
-              <span>7. 📝 複製關鍵字筆記</span>
+              <span>7. 📝 查看關鍵字筆記 → 複製筆記或重新開始</span>
+            </div>
+            <div className="flex items-center">
+              <span className="mr-2">🔄</span>
+              <span>8. 點擊「重新上傳新作品」→ 重新開始完整流程</span>
             </div>
           </div>
         </div>
