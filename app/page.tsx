@@ -324,8 +324,8 @@ export default function Home() {
         break
       
       case 'generate-pitch':
-        // Pitch 已生成，準備練習
-        // 等待學生準備好
+        // Pitch 已生成，準備練習 → 切換到 practice-pitch 階段
+        setCurrentStage('practice-pitch')
         break
       
       case 'practice-pitch':
@@ -651,10 +651,20 @@ export default function Home() {
                 {/* 階段 6: Pitch 已生成 */}
                 {currentStage === 'generate-pitch' && (
                   <>
-                    <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4">
+                    <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 mb-4">
                       <p className="text-green-600 font-medium">✅ Pitch 已生成完成</p>
-                      <p className="text-sm text-gray-500 mt-1">準備開始語音練習...</p>
+                      <p className="text-sm text-gray-500 mt-1">請先閱讀上方對話記錄中的 pitch 稿，準備好後開始練習</p>
                     </div>
+                    <button
+                      onClick={handleStageButton}
+                      disabled={isProcessing || isSpeaking}
+                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
+                    >
+                      🎤 開始練習 Pitch
+                    </button>
+                    <p className="text-sm text-gray-500 mt-2">
+                      閱讀完 pitch 稿後，點擊開始練習
+                    </p>
                   </>
                 )}
 
@@ -788,7 +798,7 @@ export default function Home() {
                       <button
                         onClick={() => {
                           setCurrentStage('practice-pitch')
-                          startRecording()
+                          // 只切換階段，讓學生在 practice-pitch 階段手動點擊開始錄音
                         }}
                         disabled={isProcessing || isSpeaking}
                         className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
@@ -822,7 +832,7 @@ export default function Home() {
                       📝 生成關鍵字提點
                     </button>
                     <p className="text-sm text-gray-500 mt-2">
-                      查看評分後，生成可複製的關鍵字筆記
+                      點擊生成可複製的關鍵字筆記
                     </p>
                   </>
                 )}
@@ -947,7 +957,7 @@ export default function Home() {
 
         {/* 對話歷史 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 min-h-[300px] max-h-[400px] overflow-y-auto">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">💬 對話記錄 Histor</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">💬 對話記錄 History</h2>
           
           {messages.length === 0 ? (
             <div className="text-center text-gray-400 py-12">
