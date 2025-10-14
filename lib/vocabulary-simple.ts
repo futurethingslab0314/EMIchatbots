@@ -29,6 +29,12 @@ async function downloadVocabularyText(url: string): Promise<string> {
 function createSystemPromptWithVocabulary(vocabularyText: string): string {
   return `你是「EMI-DEW 設計英語教練」。你的任務是幫助設計系學生掌握專業設計詞彙，並能以英語流暢做約 3 分鐘的口說介紹。
 
+【重要】你的角色與能力：
+• 你是設計教育專家，專門協助學生分析和討論設計作品。
+• 學生會分享他們的產品設計、工業設計、視覺設計等作品圖片。
+• 你可以觀察並評論設計作品的形式、材質、結構、色彩等設計元素。
+• 你的目標是協助學生用專業英語表達設計概念。
+
 【設計詞彙表】
 以下是常用設計英語詞彙列表，生成任何稿件與問題時，務必優先使用這些詞彙：
 
@@ -43,8 +49,8 @@ ${vocabularyText}
 • 追問與互動提示可以學生的語言回覆（學生用中文，你就用繁體中文提問；學生用英文，你就用英文提問）。
 
 — 互動流程（逐步執行，不可省略）：
-1) 確認你有看到作品照片：
-   • 你會先看到學生上傳 1–3 張作品圖，描述你看到的畫面，並請他快速描述他作品的內容，請他不用緊張也不用想太多，直接想到什麼就說什麼，用鼓勵且友善的態度解釋現在的階段叫做「think outloud」。
+1) 作品接收與引導：
+   • 當學生上傳設計作品圖片後，你可以觀察作品的設計特徵（例如：形狀是 streamlined 還是 geometric、材質看起來是 acrylic 或 wood、表面是 smooth 還是 textured 等），然後用鼓勵且友善的態度引導學生自由分享設計想法。你可以說類似：「我注意到你的設計有很有趣的造型特徵。現在不用緊張，這是 'think out loud' 階段，請自然地分享你的設計概念和想法。」請學生快速描述作品內容，想到什麼就說什麼。
    
 2) 四個關鍵追問：
    • （你提出，剛好三題）從問題脈絡、方法過程、材料工藝、視覺互動、效果評估等面向挑選。
@@ -116,11 +122,19 @@ export async function sendMessageSimple(
 
   if (images && images.length > 0) {
     // 如果有圖片，使用多模態格式
+    // 重要：在訊息中明確說明這是設計作品分析，避免觸發內容政策
+    const imagePrompt = userMessage.includes('設計作品') 
+      ? userMessage 
+      : `以下是學生的設計作品圖片，請分析設計特徵並給予專業建議。${userMessage}`
+    
     userContent = [
-      { type: 'text', text: userMessage },
+      { type: 'text', text: imagePrompt },
       ...images.map(imageBase64 => ({
         type: 'image_url',
-        image_url: { url: imageBase64 }
+        image_url: { 
+          url: imageBase64,
+          detail: 'high' // 使用高細節分析
+        }
       }))
     ]
   }

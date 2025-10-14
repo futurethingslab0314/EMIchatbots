@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       
       const introMessage = await sendMessageSimple(
         [],
-        '（使用者已上傳作品照片並準備開始）請開始步驟 1：描述你看到的照片內容，並用鼓勵且友善的態度請學生快速描述作品。',
+        '學生剛剛上傳了他們的設計作品圖片，現在準備開始 pitch 練習。請你作為設計英語教練，觀察作品的設計特徵並用友善鼓勵的態度開始對話。你可以提到你注意到的設計元素（例如造型、材質、色彩等，使用專業詞彙），然後引導學生進入「think out loud」階段，鼓勵他們自然地分享設計概念。',
         images
       )
 
