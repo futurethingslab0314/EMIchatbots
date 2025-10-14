@@ -114,7 +114,8 @@ export default function Home() {
         formData.append('threadId', threadId)
       }
 
-      const response = await axios.post('/api/chat', formData, {
+      // 使用簡化版 API（避免 Buffer 類型問題）
+      const response = await axios.post('/api/chat-simple', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
