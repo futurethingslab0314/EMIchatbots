@@ -18,6 +18,7 @@ export default function Home() {
   const [userTranscript, setUserTranscript] = useState('')
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [conversationStarted, setConversationStarted] = useState(false)
+  const [imagesUploaded, setImagesUploaded] = useState(false) // 新增：追蹤是否已上傳圖片
   const [threadId, setThreadId] = useState<string | null>(null)
   const [showCamera, setShowCamera] = useState(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
@@ -110,10 +111,12 @@ export default function Home() {
     try {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'recording.webm')
+      formData.append('messages', JSON.stringify(messages))
       formData.append('hasImages', uploadedImages.length > 0 ? 'true' : 'false')
       formData.append('conversationStarted', conversationStarted ? 'true' : 'false')
+      formData.append('imagesUploaded', imagesUploaded ? 'true' : 'false')
       
-      // 傳送圖片（讓 OpenAI 可以看到作品照片）
+      // 傳送圖片（讓 OpenAI 可以在整個對話中看到作品照片）
       if (uploadedImages.length > 0) {
         formData.append('images', JSON.stringify(uploadedImages))
       }
@@ -215,6 +218,63 @@ export default function Home() {
   // 移除圖片
   const removeImage = (index: number) => {
     setUploadedImages(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // 確認上傳圖片（觸發步驟 1）
+  const confirmUpload = () => {
+    if (uploadedImages.length === 0) {
+      alert('請至少上傳一張作品照片')
+      return
+    }
+    setImagesUploaded(true)
+    setConversationStarted(true)
+    
+    // 自動觸發 bot 的第一句話（步驟 1）
+    triggerBotIntroduction()
+  }
+
+  // 觸發 bot 介紹（步驟 1）
+  const triggerBotIntroduction = async () => {
+    setIsProcessing(true)
+    
+    try {
+      const formData = new FormData()
+      // 創建一個空的音訊檔案（模擬使用者觸發）
+      const emptyAudio = new Blob([new Uint8Array(0)], { type: 'audio/webm' })
+      formData.append('audio', emptyAudio, 'empty.webm')
+      formData.append('messages', JSON.stringify([]))
+      formData.append('hasImages', 'true')
+      formData.append('conversationStarted', 'false')
+      formData.append('imagesUploaded', 'true')
+      formData.append('images', JSON.stringify(uploadedImages))
+      formData.append('triggerIntro', 'true') // 特殊標記：觸發介紹
+
+      const response = await axios.post('/api/chat-simple', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      const { reply, audioUrl } = response.data
+
+      // 添加助理的介紹訊息
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: reply,
+        timestamp: new Date(),
+      }
+      setMessages([assistantMessage])
+
+      // 播放語音
+      if (audioUrl) {
+        await playAudioWithSubtitles(audioUrl, reply)
+      }
+    } catch (error) {
+      console.error('觸發介紹時發生錯誤:', error)
+      alert('無法啟動對話，請重新整理頁面')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   // 開啟相機
@@ -359,6 +419,35 @@ export default function Home() {
                   </button>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* 上傳確認按鈕 */}
+          {uploadedImages.length > 0 && !imagesUploaded && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={confirmUpload}
+                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg"
+              >
+                ✨ 開始 Pitch 練習
+              </button>
+              <p className="text-sm text-gray-500 mt-2">
+                點擊後，AI 教練會開始引導您進行作品介紹
+              </p>
+            </div>
+          )}
+
+          {/* 已開始對話的提示 */}
+          {imagesUploaded && (
+            <div className="mt-4 bg-green-50 border-l-4 border-green-500 p-4 rounded">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <p className="text-sm text-green-700 font-medium">
+                  已上傳 {uploadedImages.length} 張照片 - 使用麥克風與 AI 教練對話
+                </p>
+              </div>
             </div>
           )}
         </div>

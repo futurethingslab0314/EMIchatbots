@@ -123,7 +123,7 @@ export async function sendMessageSimple(
       { role: 'user', content: userContent },
     ],
     temperature: 0.8,
-    max_tokens: 800,
+    max_tokens: 1500, // 增加 token 限制以支援完整的 pitch 建議
   })
 
   return completion.choices[0].message.content || '抱歉，我無法生成回覆。'
