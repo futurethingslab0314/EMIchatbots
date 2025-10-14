@@ -361,14 +361,15 @@ export default function Home() {
       case 'keywords':
         // 重新開始 - 重置所有狀態
         setCurrentStage('upload')
-        setUploadedImages([])
         setMessages([])
         setGeneratedPitch('')
+        setEvaluationScores(null)
+        setUserTranscript('')
+        setCurrentSubtitle('')
+        setUploadedImages([])
         setIsRecording(false)
         setIsProcessing(false)
         setIsSpeaking(false)
-        setUserTranscript('')
-        setCurrentSubtitle('')
         // 清除文件輸入
         const fileInput = document.getElementById('file-input') as HTMLInputElement
         if (fileInput) fileInput.value = ''
@@ -518,44 +519,48 @@ export default function Home() {
         {/* 圖片上傳區域 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            📸 上傳作品照片
+            📸 上傳作品照片 Upload Your Design
           </h2>
           
-          {/* 上傳方式選擇 */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            {/* 從相簿選擇 */}
-            <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
-              <svg className="w-10 h-10 mb-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <p className="text-sm font-semibold text-gray-700">從相簿選擇</p>
-              <p className="text-xs text-gray-500">選擇現有照片</p>
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-              />
-            </label>
+          {/* 上傳方式選擇 - 只在 upload 階段顯示 */}
+          {currentStage === 'upload' && (
+            <>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {/* 從相簿選擇 */}
+                <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
+                  <svg className="w-10 h-10 mb-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-sm font-semibold text-gray-700">從相簿選擇 from album</p>
+                  <p className="text-xs text-gray-500">選擇現有照片 choose existing photos</p>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                  />
+                </label>
 
-            {/* 使用相機拍照 */}
-            <button
-              onClick={openCamera}
-              className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all"
-            >
-              <svg className="w-10 h-10 mb-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <p className="text-sm font-semibold text-gray-700">拍照</p>
-              <p className="text-xs text-gray-500">使用相機拍攝</p>
-            </button>
-          </div>
-          
-          <p className="text-xs text-gray-500 text-center">
-            💡 建議上傳 1-3 張清晰的作品照片（不同角度更佳）
-          </p>
+                {/* 使用相機拍照 */}
+                <button
+                  onClick={openCamera}
+                  className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all"
+                >
+                  <svg className="w-10 h-10 mb-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <p className="text-sm font-semibold text-gray-700">拍照 take photo</p>
+                  <p className="text-xs text-gray-500">使用相機拍攝 use camera</p>
+                </button>
+              </div>
+              
+              <p className="text-xs text-gray-500 text-center">
+                💡 建議上傳 1-3 張清晰的作品照片（不同角度更佳） recommend 1-3 clear photos (different angles are better)
+              </p>
+            </>
+          )}
 
           {/* 已上傳的圖片預覽 */}
           {uploadedImages.length > 0 && (
@@ -878,7 +883,7 @@ export default function Home() {
                 {isProcessing && (
                   <div className="flex items-center justify-center space-x-3 py-4">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    <p className="text-gray-600 font-medium">AI 處理中... / AI Processing...</p>
+                    <p className="text-gray-600 font-medium">I'm processing your ideas...</p>
                   </div>
                 )}
 
@@ -1053,41 +1058,68 @@ export default function Home() {
         <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-6 rounded-lg">
           <h3 className="text-lg font-semibold text-gray-800 mb-3">📚 Pitch 練習流程 / Pitch Practice Flow</h3>
           <div className="space-y-2 text-sm text-gray-700">
-            <div className={`flex items-center ${currentStage === 'upload' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2">{currentStage === 'upload' ? '▶️' : '✓'}</span>
-              <span>1. 上傳作品照片 → 點擊「開始練習 Pitch」/ Upload photos → Click "Start Practice Pitch"</span>
+            <div className={`flex items-start ${currentStage === 'upload' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2 mt-1">{currentStage === 'upload' ? '▶️' : '✓'}</span>
+              <div className="flex flex-col">
+                <span>1. 上傳作品照片 → 點擊「開始練習 Pitch」</span>
+                <span className="text-xs opacity-75">1. Upload photos → Click "Start Practice Pitch"</span>
+              </div>
             </div>
-            <div className="flex items-center">
-              <span className="mr-2">{currentStage !== 'upload' ? '✓' : '○'}</span>
-              <span>2. 🎤 自由描述作品（想到什麼說什麼）/ Free description (say what comes to mind)</span>
+            <div className="flex items-start">
+              <span className="mr-2 mt-1">{currentStage !== 'upload' ? '✓' : '○'}</span>
+              <div className="flex flex-col">
+                <span>2. 🎤 自由描述作品（想到什麼說什麼）</span>
+                <span className="text-xs opacity-75">2. 🎤 Free description (say what comes to mind)</span>
+              </div>
             </div>
-            <div className={`flex items-center ${currentStage === 'qa-improve' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2">{currentStage === 'qa-improve' ? '▶️' : ['confirm-summary', 'generate-pitch', 'practice-pitch', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <span>3. 🎤 回答問題 / 增加細節 / Answer questions / Add details</span>
+            <div className={`flex items-start ${currentStage === 'qa-improve' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2 mt-1">{currentStage === 'qa-improve' ? '▶️' : ['confirm-summary', 'generate-pitch', 'practice-pitch', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
+              <div className="flex flex-col">
+                <span>3. 🎤 回答問題 / 增加細節</span>
+                <span className="text-xs opacity-75">3. 🎤 Answer questions / Add details</span>
+              </div>
             </div>
-            <div className={`flex items-center ${currentStage === 'confirm-summary' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2">{currentStage === 'confirm-summary' ? '▶️' : ['generate-pitch', 'practice-pitch', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <span>4. 確認設計重點 → 點擊「確認生成 3 分鐘 Pitch」/ Confirm design focus → Click "Confirm Generate 3-min Pitch"</span>
+            <div className={`flex items-start ${currentStage === 'confirm-summary' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2 mt-1">{currentStage === 'confirm-summary' ? '▶️' : ['generate-pitch', 'practice-pitch', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
+              <div className="flex flex-col">
+                <span>4. 確認設計重點 → 點擊「確認生成 3 分鐘 Pitch」</span>
+                <span className="text-xs opacity-75">4. Confirm design focus → Click "Confirm Generate 3-min Pitch"</span>
+              </div>
             </div>
-            <div className={`flex items-center ${currentStage === 'practice-pitch' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2">{currentStage === 'practice-pitch' ? '▶️' : ['practice-again', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <span>5. 🎤 語音練習 Pitch / Voice practice Pitch</span>
+            <div className={`flex items-start ${currentStage === 'practice-pitch' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2 mt-1">{currentStage === 'practice-pitch' ? '▶️' : ['practice-again', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
+              <div className="flex flex-col">
+                <span>5. 🎤 語音練習 Pitch</span>
+                <span className="text-xs opacity-75">5. 🎤 Voice practice Pitch</span>
+              </div>
             </div>
-            <div className={`flex items-center ${currentStage === 'practice-again' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2">{currentStage === 'practice-again' ? '▶️' : ['evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <span>6. 查看評分 → 選擇「再次練習」或「生成關鍵字提點」/ View scores → Choose "Practice Again" or "Generate Keywords"</span>
+            <div className={`flex items-start ${currentStage === 'practice-again' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2 mt-1">{currentStage === 'practice-again' ? '▶️' : ['evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
+              <div className="flex flex-col">
+                <span>6. 查看評分 → 選擇「再次練習」或「生成關鍵字提點」</span>
+                <span className="text-xs opacity-75">6. View scores → Choose "Practice Again" or "Generate Keywords"</span>
+              </div>
             </div>
-            <div className={`flex items-center ${currentStage === 'evaluation' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2">{currentStage === 'evaluation' ? '▶️' : currentStage === 'keywords' ? '✓' : '○'}</span>
-              <span>7. 生成關鍵字筆記 / Generate keyword notes</span>
+            <div className={`flex items-start ${currentStage === 'evaluation' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2 mt-1">{currentStage === 'evaluation' ? '▶️' : currentStage === 'keywords' ? '✓' : '○'}</span>
+              <div className="flex flex-col">
+                <span>7. 生成關鍵字筆記</span>
+                <span className="text-xs opacity-75">7. Generate keyword notes</span>
+              </div>
             </div>
-            <div className={`flex items-center ${currentStage === 'keywords' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2">{currentStage === 'keywords' ? '▶️' : '○'}</span>
-              <span>8. 📝 查看關鍵字筆記 → 複製筆記或重新開始 / View keyword notes → Copy notes or restart</span>
+            <div className={`flex items-start ${currentStage === 'keywords' ? 'font-bold text-blue-600' : ''}`}>
+              <span className="mr-2 mt-1">{currentStage === 'keywords' ? '▶️' : '○'}</span>
+              <div className="flex flex-col">
+                <span>8. 📝 查看關鍵字筆記 → 複製筆記或重新開始</span>
+                <span className="text-xs opacity-75">8. 📝 View keyword notes → Copy notes or restart</span>
+              </div>
             </div>
-            <div className="flex items-center">
-              <span className="mr-2">🔄</span>
-              <span>9. 點擊「重新上傳新作品」→ 重新開始完整流程 / Click "Upload New Work" → Restart complete flow</span>
+            <div className="flex items-start">
+              <span className="mr-2 mt-1">🔄</span>
+              <div className="flex flex-col">
+                <span>9. 點擊「重新上傳新作品」→ 重新開始完整流程</span>
+                <span className="text-xs opacity-75">9. Click "Upload New Work" → Restart complete flow</span>
+              </div>
             </div>
           </div>
         </div>
