@@ -54,3 +54,135 @@ body {
   }
 }
 
+/* ========================================
+   按鈕統一樣式 Button Unified Styles
+   ======================================== */
+
+@layer components {
+  /* 基礎按鈕樣式 - Base Button */
+  .btn-base {
+    @apply px-6 py-3 rounded-lg font-semibold text-lg text-white;
+    @apply transition-all transform hover:scale-105 shadow-lg;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+
+  /* 小尺寸按鈕 - Small Button */
+  .btn-small {
+    @apply px-6 py-3 rounded-full font-semibold text-lg text-white;
+    @apply transition-all transform hover:scale-105 shadow-lg;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* 方形按鈕（用於最後階段）- Square Button */
+  .btn-square {
+    @apply px-6 py-3 rounded-lg font-semibold text-white;
+    @apply transition-all;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* ========================================
+     顏色變體 Color Variants
+     ======================================== */
+
+  /* 藍紫漸層 - Blue to Purple (確認上傳) */
+  .btn-blue-purple {
+    @apply bg-gradient-to-r from-blue-500 to-purple-500;
+    @apply hover:from-blue-600 hover:to-purple-600;
+  }
+
+  /* 綠色漸層 - Green to Emerald (自由分享/回答問題) */
+  .btn-green {
+    @apply bg-gradient-to-r from-green-500 to-emerald-500;
+    @apply hover:from-green-600 hover:to-emerald-600;
+  }
+
+  /* 橘紅漸層 - Orange to Red (練習 Pitch) */
+  .btn-orange-red {
+    @apply bg-gradient-to-r from-orange-500 to-red-500;
+    @apply hover:from-orange-600 hover:to-red-600;
+  }
+
+  /* 紫粉漸層 - Purple to Pink (確認生成) */
+  .btn-purple-pink {
+    @apply bg-gradient-to-r from-purple-500 to-pink-500;
+    @apply hover:from-purple-600 hover:to-pink-600;
+  }
+
+  /* 紅粉漸層 - Red to Pink (錄音中) */
+  .btn-red-pink {
+    @apply bg-gradient-to-r from-red-500 to-pink-500;
+  }
+
+  /* 藍青漸層 - Blue to Cyan (再次練習) */
+  .btn-blue-cyan {
+    @apply bg-gradient-to-r from-blue-500 to-cyan-500;
+    @apply hover:from-blue-600 hover:to-cyan-600;
+  }
+
+  /* 黃琥珀漸層 - Yellow to Amber (生成關鍵字) */
+  .btn-yellow-amber {
+    @apply bg-gradient-to-r from-yellow-500 to-amber-500;
+    @apply hover:from-yellow-600 hover:to-amber-600;
+  }
+
+  /* 單純藍色 - Solid Blue (複製筆記) */
+  .btn-blue-solid {
+    @apply bg-blue-500 hover:bg-blue-600;
+  }
+
+  /* ========================================
+     組合樣式 Combined Styles
+     ======================================== */
+
+  /* 確認上傳按鈕 */
+  .btn-confirm-upload {
+    @apply btn-base btn-blue-purple;
+  }
+
+  /* 錄音按鈕（未錄音） */
+  .btn-record-start {
+    @apply btn-base btn-green;
+  }
+
+  /* 錄音按鈕（錄音中） */
+  .btn-record-stop {
+    @apply btn-base btn-red-pink recording-pulse;
+  }
+
+  /* 重新描述按鈕 */
+  .btn-redescribe {
+    @apply btn-small btn-orange-red;
+  }
+
+  /* 確認生成 Pitch 按鈕 */
+  .btn-confirm-generate {
+    @apply btn-small btn-purple-pink;
+  }
+
+  /* 練習 Pitch 按鈕 */
+  .btn-practice-pitch {
+    @apply btn-base btn-orange-red animate-pulse;
+  }
+
+  /* 再次練習按鈕 */
+  .btn-practice-again {
+    @apply btn-small btn-blue-cyan;
+  }
+
+  /* 生成關鍵字按鈕 */
+  .btn-generate-keywords {
+    @apply btn-small btn-green;
+  }
+
+  /* 複製筆記按鈕 */
+  .btn-copy-notes {
+    @apply btn-square btn-blue-solid flex-1;
+  }
+
+  /* 重新上傳按鈕 */
+  .btn-restart {
+    @apply btn-square btn-green flex-1 transform hover:scale-105 shadow-lg;
+  }
+}
+

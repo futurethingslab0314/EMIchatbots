@@ -509,7 +509,7 @@ export default function Home() {
         {/* 標題 */}
         <div className="text-center mb-8 pt-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            EMI-DEW 設計英語教練
+            3-MinuteDesign Pitch Coach
           </h1>
           <p className="text-gray-600">
             語音對話式設計作品 Pitch 練習平台
@@ -595,7 +595,7 @@ export default function Home() {
                     <button
                       onClick={handleStageButton}
                       disabled={isProcessing || isSpeaking}
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                      className="btn-confirm-upload"
                     >
                       📤 確認上傳作品 / Confirm Upload
                     </button>
@@ -611,11 +611,7 @@ export default function Home() {
                     <button
                       onClick={isRecording ? stopRecording : handleStageButton}
                       disabled={isProcessing || isSpeaking}
-                      className={`px-8 py-4 rounded-full font-semibold text-lg transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 ${
-                        isRecording 
-                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white recording-pulse' 
-                          : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600'
-                      }`}
+                      className={isRecording ? 'btn-record-stop' : 'btn-record-start'}
                     >
                       {isRecording ? '🔴 停止錄音 / Stop Recording' : '🎤 自由分享 / Free Sharing'}
                     </button>
@@ -635,11 +631,7 @@ export default function Home() {
                     <button
                       onClick={isRecording ? stopRecording : handleStageButton}
                       disabled={isProcessing || isSpeaking}
-                      className={`px-8 py-4 rounded-full font-semibold text-lg transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 ${
-                        isRecording 
-                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white recording-pulse' 
-                          : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600'
-                      }`}
+                      className={isRecording ? 'btn-record-stop' : 'btn-base btn-blue-cyan'}
                     >
                       {isRecording ? '🔴 停止錄音 / Stop Recording' : '🎤 回答問題/增加細節 / Answer Questions'}
                     </button>
@@ -659,14 +651,14 @@ export default function Home() {
                       <button
                         onClick={() => handleConfirmStageButton('redescribe')}
                         disabled={isProcessing || isSpeaking}
-                        className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                        className="btn-redescribe"
                       >
                         🔄 重新描述作品 / Redescribe
                       </button>
                       <button
                         onClick={() => handleConfirmStageButton('confirm')}
                         disabled={isProcessing || isSpeaking}
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                        className="btn-confirm-generate"
                       >
                         ✅ 確認生成 3 分鐘 Pitch / Confirm Generate 3-min Pitch
                       </button>
@@ -687,7 +679,7 @@ export default function Home() {
                     <button
                       onClick={handleStageButton}
                       disabled={isProcessing || isSpeaking}
-                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
+                      className="btn-practice-pitch"
                     >
                       🎤 開始練習 Pitch / Start Practice
                     </button>
@@ -703,7 +695,7 @@ export default function Home() {
                     <button
                       onClick={handleStageButton}
                       disabled={isProcessing || isSpeaking}
-                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 animate-pulse"
+                      className="btn-practice-pitch"
                     >
                       🎤 開始語音練習 Pitch / Start Voice Practice
                     </button>
@@ -719,7 +711,7 @@ export default function Home() {
                     <button
                       onClick={stopRecording}
                       disabled={isProcessing || isSpeaking}
-                      className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-8 py-4 rounded-full font-semibold text-lg recording-pulse transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                      className="btn-record-stop"
                     >
                       🔴 停止錄音 / Stop Recording
                     </button>
@@ -830,7 +822,7 @@ export default function Home() {
                           // 只切換階段，讓學生在 practice-pitch 階段手動點擊開始錄音
                         }}
                         disabled={isProcessing || isSpeaking}
-                        className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                        className="btn-practice-again"
                       >
                         🔄 再次練習 Pitch / Practice Again
                       </button>
@@ -839,7 +831,7 @@ export default function Home() {
                           await triggerStageAction('evaluation')
                         }}
                         disabled={isProcessing || isSpeaking}
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-full font-semibold text-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                        className="btn-generate-keywords"
                       >
                         📝 生成關鍵字提點 / Generate Keywords
                       </button>
@@ -856,7 +848,7 @@ export default function Home() {
                     <button
                       onClick={handleStageButton}
                       disabled={isProcessing || isSpeaking}
-                      className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-yellow-600 hover:to-amber-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                      className="btn-base btn-yellow-amber"
                     >
                       📝 生成關鍵字提點 / Generate Keywords
                     </button>
@@ -1036,14 +1028,14 @@ export default function Home() {
                   navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
                   alert('✅ 已複製到剪貼簿！')
                 }}
-                className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-all"
+                className="btn-copy-notes"
               >
                 📋 複製關鍵字筆記 / Copy Keywords
               </button>
               <button
                 onClick={handleStageButton}
                 disabled={isProcessing || isSpeaking}
-                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                className="btn-restart"
               >
                 🔄 重新上傳新作品 / Upload New Work
               </button>
