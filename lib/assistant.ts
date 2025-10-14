@@ -1,10 +1,21 @@
 import OpenAI from 'openai'
-import fs from 'fs'
-import path from 'path'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
+
+// 只在 Node.js 環境中導入 fs 和 path（避免在 Vercel Edge 環境中出錯）
+let fs: any = null
+let path: any = null
+
+if (typeof window === 'undefined') {
+  try {
+    fs = require('fs')
+    path = require('path')
+  } catch (e) {
+    // 在某些環境中可能無法使用 fs
+  }
+}
 
 // EMI-DEW 教練的指令
 const ASSISTANT_INSTRUCTIONS = `你是「EMI-DEW 設計英語教練」。你的任務是幫助設計系學生掌握專業設計詞彙，並能以英語流暢做約 3 分鐘的口說介紹。你可以存取詞彙表檔案，該文件是常用設計英語詞彙列表。生成任何稿件與問題時，務必優先使用與該文件相符的詞彙；在最終稿末尾，列出實際用到且出自該文件的詞彙與字義，供學生參照與學習。
@@ -75,22 +86,86 @@ const ASSISTANT_INSTRUCTIONS = `你是「EMI-DEW 設計英語教練」。你的�
 
 請嚴格遵循以上流程，逐步引導學生完成設計作品的英語 pitch 練習。`
 
-// 上傳詞彙表 PDF 並創建 Assistant（只需執行一次）
-export async function setupAssistant() {
-  try {
-    // 1. 上傳 PDF 檔案
-    const pdfPath = path.join(process.cwd(), 'vocabularylist.pdf')
+// 處理 Google Sheets URL，轉換為 PDF 導出格式
+function processGoogleSheetsUrl(url: string): string {
+  // Google Sheets 分享連結格式：
+  // https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit?usp=sharing
+  // 轉換為 PDF 導出連結：
+  // https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=pdf
+  
+  const sheetsMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+  if (sheetsMatch) {
+    const sheetId = sheetsMatch[1]
     
-    if (!fs.existsSync(pdfPath)) {
-      throw new Error('找不到 vocabularylist.pdf，請確認檔案在專案根目錄')
+    // 檢查是否有指定工作表（gid）
+    const gidMatch = url.match(/[#&]gid=([0-9]+)/)
+    const gid = gidMatch ? gidMatch[1] : '0'
+    
+    return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=pdf&gid=${gid}`
+  }
+  
+  return url
+}
+
+// 從 URL 下載檔案（支援 GitHub、Google Sheets 等來源）
+async function downloadFileFromUrl(url: string): Promise<Buffer> {
+  // 如果是 Google Sheets URL，先轉換為導出格式
+  const processedUrl = processGoogleSheetsUrl(url)
+  
+  console.log('📥 下載 URL:', processedUrl)
+  
+  const response = await fetch(processedUrl, {
+    redirect: 'follow', // Google Sheets 導出會重定向
+  })
+  
+  if (!response.ok) {
+    throw new Error(`下載檔案失敗 (${response.status}): ${response.statusText}`)
+  }
+  
+  const arrayBuffer = await response.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+  
+  console.log(`✅ 檔案下載完成 (${(buffer.length / 1024).toFixed(2)} KB)`)
+  
+  return buffer
+}
+
+// 上傳詞彙表並創建 Assistant（支援本地檔案或 URL）
+export async function setupAssistant(pdfSource?: string) {
+  try {
+    let fileBuffer: Buffer
+    let fileName = 'vocabularylist.pdf'
+
+    // 判斷是從 URL 還是本地檔案
+    if (pdfSource && (pdfSource.startsWith('http://') || pdfSource.startsWith('https://'))) {
+      // 從 URL 下載
+      console.log('📥 從 URL 下載 PDF:', pdfSource)
+      fileBuffer = await downloadFileFromUrl(pdfSource)
+      fileName = pdfSource.split('/').pop() || 'vocabularylist.pdf'
+      console.log('✅ PDF 下載完成')
+    } else {
+      // 從本地檔案讀取
+      if (!fs || !path) {
+        throw new Error('此環境不支援檔案系統操作。請提供 PDF URL 或在本地環境執行。')
+      }
+
+      const pdfPath = pdfSource || path.join(process.cwd(), 'vocabularylist.pdf')
+      
+      if (!fs.existsSync(pdfPath)) {
+        throw new Error(`找不到檔案: ${pdfPath}`)
+      }
+
+      console.log('📄 從本地讀取 PDF:', pdfPath)
+      fileBuffer = fs.readFileSync(pdfPath)
     }
 
+    // 1. 上傳 PDF 檔案到 OpenAI
     const file = await openai.files.create({
-      file: fs.createReadStream(pdfPath),
+      file: new File([fileBuffer], fileName, { type: 'application/pdf' }),
       purpose: 'assistants',
     })
 
-    console.log('✅ PDF 檔案已上傳:', file.id)
+    console.log('✅ PDF 檔案已上傳到 OpenAI:', file.id)
 
     // 2. 創建 Vector Store（用於檔案搜尋）
     const vectorStore = await openai.beta.vectorStores.create({
@@ -130,23 +205,38 @@ export async function setupAssistant() {
 // 取得或創建 Assistant
 export async function getOrCreateAssistant() {
   const assistantId = process.env.OPENAI_ASSISTANT_ID
+  const pdfUrl = process.env.VOCABULARY_PDF_URL // 新增：支援從環境變數讀取 PDF URL
 
+  // 如果有 Assistant ID，直接使用
   if (assistantId) {
     try {
-      // 驗證 Assistant 是否存在
       const assistant = await openai.beta.assistants.retrieve(assistantId)
+      console.log('✅ 使用現有 Assistant:', assistantId)
       return assistant
-    } catch (error) {
-      console.log('Assistant 不存在，創建新的...')
+    } catch (error: any) {
+      console.warn('⚠️ 無法取得 Assistant，嘗試創建新的...')
     }
   }
 
-  // 如果沒有 ID 或 Assistant 不存在，創建新的
-  const { assistantId: newAssistantId } = await setupAssistant()
-  console.log('⚠️ 請將以下 ID 加入 .env.local:')
-  console.log(`OPENAI_ASSISTANT_ID=${newAssistantId}`)
-  
-  return await openai.beta.assistants.retrieve(newAssistantId)
+  // 如果沒有 Assistant ID，嘗試自動創建
+  if (pdfUrl) {
+    console.log('🚀 自動從 URL 創建 Assistant...')
+    const { assistantId: newAssistantId } = await setupAssistant(pdfUrl)
+    console.log('✅ Assistant 已自動創建:', newAssistantId)
+    console.log('💡 建議：將此 ID 加入環境變數以避免重複創建')
+    console.log(`   OPENAI_ASSISTANT_ID=${newAssistantId}`)
+    
+    return await openai.beta.assistants.retrieve(newAssistantId)
+  }
+
+  // 都沒有，拋出錯誤
+  throw new Error(
+    '未設定 OPENAI_ASSISTANT_ID 或 VOCABULARY_PDF_URL 環境變數。\n\n' +
+    '請選擇以下其中一種方式：\n' +
+    '1. 在本地執行 npm run setup-assistant 後，將 OPENAI_ASSISTANT_ID 加入環境變數\n' +
+    '2. 將 PDF 放在 GitHub，並設定 VOCABULARY_PDF_URL 環境變數（系統會自動下載並創建 Assistant）\n\n' +
+    '範例：VOCABULARY_PDF_URL=https://github.com/username/repo/raw/main/vocabularylist.pdf'
+  )
 }
 
 // 創建對話 Thread
@@ -200,4 +290,3 @@ export async function sendMessage(
 }
 
 export { openai }
-
