@@ -47,6 +47,7 @@ export default function Home() {
   const audioContextRef = useRef<AudioContext | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [audioUnlocked, setAudioUnlocked] = useState(false)
 
   useEffect(() => {
     // 初始化 Web Speech API（用於即時顯示使用者語音字幕）
@@ -82,6 +83,9 @@ export default function Home() {
   // 開始錄音
   const startRecording = async () => {
     try {
+      // 解鎖音頻播放（Safari 需要）
+      await unlockAudio()
+      
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       mediaRecorderRef.current = new MediaRecorder(stream)
       audioChunksRef.current = []
@@ -191,54 +195,105 @@ export default function Home() {
     }
   }
 
+  // 解鎖音頻播放（用於 Safari）
+  const unlockAudio = async () => {
+    if (audioUnlocked) return
+    
+    try {
+      // 創建一個靜音音頻並播放，以解鎖 Safari 的音頻限制
+      const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAA4T/vSKKAAAAAAAAAAAAAAAAAAAA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQZDwP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV')
+      silentAudio.setAttribute('playsinline', '')
+      await silentAudio.play()
+      setAudioUnlocked(true)
+      console.log('✅ 音頻已解鎖')
+    } catch (error) {
+      console.warn('⚠️ 音頻解鎖失敗:', error)
+    }
+  }
+
   // 播放音訊並顯示字幕
   const playAudioWithSubtitles = async (audioUrl: string, text: string) => {
     setIsSpeaking(true)
     setCurrentSubtitle(text)
 
-    const audio = new Audio(audioUrl)
-    
-    // 設置音頻屬性以支援手機播放
-    audio.setAttribute('playsinline', 'true') // iOS 需要
-    audio.preload = 'auto'
-    
     return new Promise<void>((resolve) => {
+      // 創建 audio 元素
+      const audio = new Audio()
+      
+      // 設置音頻屬性以支援手機播放（必須在設置 src 之前）
+      audio.setAttribute('playsinline', '')
+      audio.setAttribute('webkit-playsinline', '')
+      audio.preload = 'auto'
+      audio.crossOrigin = 'anonymous'
+      
+      // 設置 src
+      audio.src = audioUrl
+      
+      // 監聽事件
       audio.onended = () => {
+        console.log('✅ 音頻播放完成')
         setIsSpeaking(false)
         setCurrentSubtitle('')
+        audio.remove() // 清理音頻元素
         resolve()
       }
       
       audio.onerror = (e) => {
-        console.error('音頻播放錯誤:', e)
+        console.error('❌ 音頻播放錯誤:', e)
         setIsSpeaking(false)
         setCurrentSubtitle('')
+        audio.remove()
         resolve()
       }
       
-      // 嘗試播放音頻，並處理可能的錯誤
-      audio.play().catch((error) => {
-        console.error('播放音頻失敗:', error)
+      // 監聽加載完成
+      audio.oncanplaythrough = () => {
+        console.log('✅ 音頻加載完成，準備播放')
+      }
+      
+      // 嘗試播放音頻
+      console.log('🔊 嘗試播放音頻:', audioUrl)
+      
+      // 先加載音頻
+      audio.load()
+      
+      // 使用 setTimeout 確保在用戶交互上下文中播放
+      setTimeout(() => {
+        const playPromise = audio.play()
         
-        // 如果是自動播放被阻擋（常見於手機瀏覽器）
-        if (error.name === 'NotAllowedError' || error.name === 'NotSupportedError') {
-          console.warn('⚠️ 音頻自動播放被阻擋，這在手機上很常見')
-          // 即使播放失敗，也要清除狀態
-          setIsSpeaking(false)
-          setCurrentSubtitle('')
-          resolve()
-        } else {
-          // 其他錯誤，嘗試重新播放一次
-          setTimeout(() => {
-            audio.play().catch(() => {
-              console.error('重試播放也失敗')
-              setIsSpeaking(false)
-              setCurrentSubtitle('')
-              resolve()
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('✅ 音頻播放成功')
             })
-          }, 100)
+            .catch((error) => {
+              console.error('❌ 播放音頻失敗:', error.name, error.message)
+              
+              // 如果是自動播放被阻擋
+              if (error.name === 'NotAllowedError') {
+                console.warn('⚠️ Safari 阻擋了自動播放，需要用戶交互')
+                alert('請點擊「確定」以播放語音回覆 / Please click "OK" to play audio')
+                
+                // 在用戶點擊 alert 後重試
+                audio.play()
+                  .then(() => console.log('✅ 用戶交互後播放成功'))
+                  .catch(() => {
+                    console.error('❌ 用戶交互後仍然失敗')
+                    setIsSpeaking(false)
+                    setCurrentSubtitle('')
+                    audio.remove()
+                    resolve()
+                  })
+              } else {
+                // 其他錯誤
+                setIsSpeaking(false)
+                setCurrentSubtitle('')
+                audio.remove()
+                resolve()
+              }
+            })
         }
-      })
+      }, 100)
     })
   }
 
