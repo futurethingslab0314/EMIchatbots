@@ -48,6 +48,9 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
+  const [showAudioModal, setShowAudioModal] = useState(false)
+  const [pendingAudioUrl, setPendingAudioUrl] = useState<string | null>(null)
+  const [pendingAudioText, setPendingAudioText] = useState<string>('')
 
   useEffect(() => {
     // 初始化 Web Speech API（用於即時顯示使用者語音字幕）
@@ -109,7 +112,9 @@ export default function Home() {
       }
     } catch (error) {
       console.error('無法啟動錄音:', error)
-      alert('無法存取麥克風，請確認權限設定')
+      setPendingAudioUrl('')
+      setPendingAudioText('無法存取麥克風，請確認權限設定')
+      setShowAudioModal(true)
     }
   }
 
@@ -189,10 +194,90 @@ export default function Home() {
       }
     } catch (error) {
       console.error('處理音訊時發生錯誤:', error)
-      alert('處理語音時發生錯誤，請稍後再試')
+      setPendingAudioUrl('')
+      setPendingAudioText('處理語音時發生錯誤，請稍後再試')
+      setShowAudioModal(true)
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  // 處理音頻播放請求（當需要用戶交互時）
+  const handleAudioPlayRequest = (audioUrl: string, text: string) => {
+    setPendingAudioUrl(audioUrl)
+    setPendingAudioText(text)
+    setShowAudioModal(true)
+  }
+
+  // 用戶確認播放音頻
+  const confirmAudioPlay = async () => {
+    setShowAudioModal(false)
+    if (pendingAudioUrl && pendingAudioText) {
+      await playAudioDirectly(pendingAudioUrl, pendingAudioText)
+      setPendingAudioUrl(null)
+      setPendingAudioText('')
+    }
+  }
+
+  // 直接播放音頻（不需要用戶交互）
+  const playAudioDirectly = async (audioUrl: string, text: string) => {
+    setIsSpeaking(true)
+    setCurrentSubtitle(text)
+
+    return new Promise<void>((resolve) => {
+      const audio = new Audio()
+      audio.setAttribute('playsinline', '')
+      audio.setAttribute('webkit-playsinline', '')
+      audio.preload = 'auto'
+      audio.crossOrigin = 'anonymous'
+      audio.src = audioUrl
+      
+      audio.onended = () => {
+        console.log('✅ 音頻播放完成')
+        setIsSpeaking(false)
+        setCurrentSubtitle('')
+        audio.remove()
+        resolve()
+      }
+      
+      audio.onerror = (e) => {
+        console.error('❌ 音頻播放錯誤:', e)
+        setIsSpeaking(false)
+        setCurrentSubtitle('')
+        audio.remove()
+        resolve()
+      }
+      
+      audio.oncanplaythrough = () => {
+        console.log('✅ 音頻加載完成，準備播放')
+      }
+      
+      console.log('🔊 嘗試播放音頻:', audioUrl)
+      audio.load()
+      
+      setTimeout(() => {
+        const playPromise = audio.play()
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('✅ 音頻播放成功')
+            })
+            .catch((error) => {
+              console.error('❌ 播放音頻失敗:', error.name, error.message)
+              if (error.name === 'NotAllowedError') {
+                console.warn('⚠️ 音頻播放被阻擋，需要用戶交互')
+                handleAudioPlayRequest(audioUrl, text)
+              } else {
+                setIsSpeaking(false)
+                setCurrentSubtitle('')
+                audio.remove()
+                resolve()
+              }
+            })
+        }
+      }, 100)
+    })
   }
 
   // 解鎖音頻播放（用於 Safari）
@@ -213,88 +298,7 @@ export default function Home() {
 
   // 播放音訊並顯示字幕
   const playAudioWithSubtitles = async (audioUrl: string, text: string) => {
-    setIsSpeaking(true)
-    setCurrentSubtitle(text)
-
-    return new Promise<void>((resolve) => {
-      // 創建 audio 元素
-      const audio = new Audio()
-      
-      // 設置音頻屬性以支援手機播放（必須在設置 src 之前）
-      audio.setAttribute('playsinline', '')
-      audio.setAttribute('webkit-playsinline', '')
-      audio.preload = 'auto'
-      audio.crossOrigin = 'anonymous'
-      
-      // 設置 src
-      audio.src = audioUrl
-      
-      // 監聽事件
-      audio.onended = () => {
-        console.log('✅ 音頻播放完成')
-        setIsSpeaking(false)
-        setCurrentSubtitle('')
-        audio.remove() // 清理音頻元素
-        resolve()
-      }
-      
-      audio.onerror = (e) => {
-        console.error('❌ 音頻播放錯誤:', e)
-        setIsSpeaking(false)
-        setCurrentSubtitle('')
-        audio.remove()
-        resolve()
-      }
-      
-      // 監聽加載完成
-      audio.oncanplaythrough = () => {
-        console.log('✅ 音頻加載完成，準備播放')
-      }
-      
-      // 嘗試播放音頻
-      console.log('🔊 嘗試播放音頻:', audioUrl)
-      
-      // 先加載音頻
-      audio.load()
-      
-      // 使用 setTimeout 確保在用戶交互上下文中播放
-      setTimeout(() => {
-        const playPromise = audio.play()
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log('✅ 音頻播放成功')
-            })
-            .catch((error) => {
-              console.error('❌ 播放音頻失敗:', error.name, error.message)
-              
-              // 如果是自動播放被阻擋
-              if (error.name === 'NotAllowedError') {
-                console.warn('⚠️ Safari 阻擋了自動播放，需要用戶交互')
-                alert('請點擊「確定」以播放語音回覆 / Please click "OK" to play audio')
-                
-                // 在用戶點擊 alert 後重試
-                audio.play()
-                  .then(() => console.log('✅ 用戶交互後播放成功'))
-                  .catch(() => {
-                    console.error('❌ 用戶交互後仍然失敗')
-                    setIsSpeaking(false)
-                    setCurrentSubtitle('')
-                    audio.remove()
-                    resolve()
-                  })
-              } else {
-                // 其他錯誤
-                setIsSpeaking(false)
-                setCurrentSubtitle('')
-                audio.remove()
-                resolve()
-              }
-            })
-        }
-      }, 100)
-    })
+    await playAudioDirectly(audioUrl, text)
   }
 
   // 處理圖片上傳
@@ -375,7 +379,9 @@ export default function Home() {
       }
     } catch (error) {
       console.error('觸發階段動作時發生錯誤:', error)
-      alert('處理時發生錯誤，請稍後再試')
+      setPendingAudioUrl('')
+      setPendingAudioText('處理時發生錯誤，請稍後再試')
+      setShowAudioModal(true)
     } finally {
       setIsProcessing(false)
     }
@@ -398,7 +404,9 @@ export default function Home() {
       case 'upload':
         // 確認上傳作品 → Bot 介紹
         if (uploadedImages.length === 0) {
-          alert('請至少上傳一張作品照片')
+          setPendingAudioUrl('')
+          setPendingAudioText('請至少上傳一張作品照片')
+          setShowAudioModal(true)
           return
         }
         await triggerStageAction('intro')
@@ -476,7 +484,9 @@ export default function Home() {
       }, 100)
     } catch (error) {
       console.error('無法存取相機:', error)
-      alert('無法開啟相機，請確認權限設定或使用「從相簿選擇」功能')
+      setPendingAudioUrl('')
+      setPendingAudioText('無法開啟相機，請確認權限設定或使用「從相簿選擇」功能')
+      setShowAudioModal(true)
     }
   }
 
@@ -967,6 +977,48 @@ export default function Home() {
           )}
         </div>
 
+        {/* 音頻播放確認模態對話框 */}
+        {showAudioModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="text-center">
+                <div className="mb-4">
+                  <svg className="w-16 h-16 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </div>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                  {pendingAudioUrl ? '音頻播放確認 / Audio Playback Confirmation' : '通知 / Notification'}
+                </h3>
+                
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  {pendingAudioText || '請點擊「確定」以播放語音回覆 / Please click "OK" to play audio'}
+                </p>
+                
+                <div className="flex space-x-4 justify-center">
+                  <button
+                    onClick={() => {
+                      setShowAudioModal(false)
+                      setPendingAudioUrl(null)
+                      setPendingAudioText('')
+                    }}
+                    className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                  >
+                    取消 / Cancel
+                  </button>
+                  <button
+                    onClick={confirmAudioPlay}
+                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                  >
+                    確定 / OK
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 相機模態視窗 */}
         {showCamera && (
           <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
@@ -1086,7 +1138,9 @@ export default function Home() {
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
-                  alert('✅ 已複製到剪貼簿！')
+                  setPendingAudioUrl('')
+                  setPendingAudioText('✅ 已複製到剪貼簿！')
+                  setShowAudioModal(true)
                 }}
                 className="btn-copy-notes"
               >
