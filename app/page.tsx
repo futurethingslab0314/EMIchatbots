@@ -51,6 +51,7 @@ export default function Home() {
   const [showAudioModal, setShowAudioModal] = useState(false)
   const [pendingAudioUrl, setPendingAudioUrl] = useState<string | null>(null)
   const [pendingAudioText, setPendingAudioText] = useState<string>('')
+  const pendingAudioResolveRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     // 初始化 Web Speech API（用於即時顯示使用者語音字幕）
@@ -203,9 +204,10 @@ export default function Home() {
   }
 
   // 處理音頻播放請求（當需要用戶交互時）
-  const handleAudioPlayRequest = (audioUrl: string, text: string) => {
+  const handleAudioPlayRequest = (audioUrl: string, text: string, resolve?: () => void) => {
     setPendingAudioUrl(audioUrl)
     setPendingAudioText(text)
+    pendingAudioResolveRef.current = resolve || null
     setShowAudioModal(true)
   }
 
@@ -216,6 +218,11 @@ export default function Home() {
       await playAudioDirectly(pendingAudioUrl, pendingAudioText)
       setPendingAudioUrl(null)
       setPendingAudioText('')
+    }
+    // 調用保存的 resolve 函數
+    if (pendingAudioResolveRef.current) {
+      pendingAudioResolveRef.current()
+      pendingAudioResolveRef.current = null
     }
   }
 
@@ -267,7 +274,7 @@ export default function Home() {
               console.error('❌ 播放音頻失敗:', error.name, error.message)
               if (error.name === 'NotAllowedError') {
                 console.warn('⚠️ 音頻播放被阻擋，需要用戶交互')
-                handleAudioPlayRequest(audioUrl, text)
+                handleAudioPlayRequest(audioUrl, text, resolve)
               } else {
                 setIsSpeaking(false)
                 setCurrentSubtitle('')
@@ -1002,6 +1009,14 @@ export default function Home() {
                       setShowAudioModal(false)
                       setPendingAudioUrl(null)
                       setPendingAudioText('')
+                      // 如果用戶取消，也要重置音頻狀態
+                      setIsSpeaking(false)
+                      setCurrentSubtitle('')
+                      // 調用 resolve 函數以完成 Promise
+                      if (pendingAudioResolveRef.current) {
+                        pendingAudioResolveRef.current()
+                        pendingAudioResolveRef.current = null
+                      }
                     }}
                     className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
                   >
