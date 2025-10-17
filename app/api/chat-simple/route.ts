@@ -91,11 +91,12 @@ export async function POST(request: NextRequest) {
         voice: 'nova',
         input: reply,
         speed: 0.95,
+        response_format: 'mp3', // 明確指定格式
       })
 
       const audioBuffer = Buffer.from(await speech.arrayBuffer())
       const audioBase64 = audioBuffer.toString('base64')
-      const audioUrl = `data:audio/mpeg;base64,${audioBase64}`
+      const audioUrl = `data:audio/mp3;base64,${audioBase64}`
 
       // 判斷下一個階段
       const nextStage = STAGE_TRANSITIONS[currentStage]
@@ -155,11 +156,12 @@ export async function POST(request: NextRequest) {
       voice: 'nova',
       input: assistantReply,
       speed: 0.95,
+      response_format: 'mp3', // 明確指定格式
     })
 
     const audioBuffer = Buffer.from(await speech.arrayBuffer())
     const audioBase64 = audioBuffer.toString('base64')
-    const audioUrl = `data:audio/mpeg;base64,${audioBase64}`
+    const audioUrl = `data:audio/mp3;base64,${audioBase64}`
 
     // 判斷是否需要轉換階段
     let nextStage: ConversationStage | undefined

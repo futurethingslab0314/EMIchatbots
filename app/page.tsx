@@ -256,12 +256,20 @@ export default function Home() {
     setCurrentSubtitle(text)
 
     return new Promise<void>((resolve) => {
+      // 檢查音頻 URL 是否有效
+      if (!audioUrl || audioUrl === 'null' || audioUrl === 'undefined') {
+        console.warn('⚠️ 音頻 URL 無效:', audioUrl)
+        setIsSpeaking(false)
+        setCurrentSubtitle('')
+        resolve()
+        return
+      }
+
       const audio = new Audio()
       audio.setAttribute('playsinline', '')
       audio.setAttribute('webkit-playsinline', '')
       audio.preload = 'auto'
       audio.crossOrigin = 'anonymous'
-      audio.src = audioUrl
       
       audio.onended = () => {
         console.log('✅ 音頻播放完成')
@@ -273,6 +281,8 @@ export default function Home() {
       
       audio.onerror = (e) => {
         console.error('❌ 音頻播放錯誤:', e)
+        console.error('音頻 URL:', audioUrl)
+        console.error('音頻格式可能不支援或 URL 無效')
         setIsSpeaking(false)
         setCurrentSubtitle('')
         audio.remove()
@@ -282,8 +292,17 @@ export default function Home() {
       audio.oncanplaythrough = () => {
         console.log('✅ 音頻加載完成，準備播放')
       }
+
+      audio.onloadstart = () => {
+        console.log('🔄 開始加載音頻:', audioUrl)
+      }
+
+      audio.onloadeddata = () => {
+        console.log('📊 音頻數據加載完成')
+      }
       
       console.log('🔊 嘗試播放音頻:', audioUrl)
+      audio.src = audioUrl
       audio.load()
       
       setTimeout(() => {
@@ -299,6 +318,12 @@ export default function Home() {
               if (error.name === 'NotAllowedError') {
                 console.warn('⚠️ 音頻播放被阻擋，需要用戶交互')
                 handleAudioPlayRequest(audioUrl, text, resolve)
+              } else if (error.name === 'NotSupportedError') {
+                console.warn('⚠️ 音頻格式不支援，跳過播放')
+                setIsSpeaking(false)
+                setCurrentSubtitle('')
+                audio.remove()
+                resolve()
               } else {
                 setIsSpeaking(false)
                 setCurrentSubtitle('')
