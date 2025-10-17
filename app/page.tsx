@@ -60,6 +60,77 @@ export default function Home() {
   const [pendingAudioUrl, setPendingAudioUrl] = useState<string | null>(null)
   const [pendingAudioText, setPendingAudioText] = useState<string>('')
   const pendingAudioResolveRef = useRef<(() => void) | null>(null)
+  
+  // 音訊權限狀態
+  const [audioPermissionsGranted, setAudioPermissionsGranted] = useState(false)
+  const [isRequestingPermissions, setIsRequestingPermissions] = useState(false)
+
+  // 預先請求音訊權限
+  const requestAudioPermissions = async () => {
+    if (audioPermissionsGranted || isRequestingPermissions) return true
+    
+    setIsRequestingPermissions(true)
+    
+    try {
+      // 1. 創建 AudioContext 並解鎖
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+      }
+      
+      // 2. 如果 AudioContext 被暫停，嘗試恢復
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume()
+      }
+      
+      // 3. 創建一個短暫的無聲音頻來解鎖音訊系統
+      const oscillator = audioContextRef.current.createOscillator()
+      const gainNode = audioContextRef.current.createGain()
+      
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContextRef.current.destination)
+      
+      // 設置音量為 0，避免播放聲音
+      gainNode.gain.setValueAtTime(0, audioContextRef.current.currentTime)
+      
+      // 播放很短的時間
+      oscillator.frequency.setValueAtTime(440, audioContextRef.current.currentTime)
+      oscillator.start()
+      oscillator.stop(audioContextRef.current.currentTime + 0.01)
+      
+      // 4. 測試音訊播放權限
+      const testAudio = new Audio()
+      testAudio.setAttribute('playsinline', '')
+      testAudio.setAttribute('webkit-playsinline', '')
+      
+      // 創建一個短暫的無聲音頻數據
+      const audioBuffer = audioContextRef.current.createBuffer(1, 1, 44100)
+      const audioData = audioBuffer.getChannelData(0)
+      
+      // 創建一個簡單的無聲音頻 blob
+      const audioBlob = new Blob([audioData.buffer], { type: 'audio/wav' })
+      const audioUrl = URL.createObjectURL(audioBlob)
+      
+      testAudio.src = audioUrl
+      await testAudio.play()
+      
+      // 清理
+      URL.revokeObjectURL(audioUrl)
+      testAudio.remove()
+      
+      console.log('✅ 音訊權限已獲得')
+      setAudioPermissionsGranted(true)
+      setAudioUnlocked(true)
+      return true
+      
+    } catch (error) {
+      console.warn('⚠️ 音訊權限請求失敗:', error)
+      // 即使失敗，也標記為已嘗試，避免重複請求
+      setAudioPermissionsGranted(false)
+      return false
+    } finally {
+      setIsRequestingPermissions(false)
+    }
+  }
 
   useEffect(() => {
     // 初始化 Web Speech API（用於即時顯示使用者語音字幕）
@@ -112,6 +183,9 @@ export default function Home() {
     try {
       // 解鎖音頻播放（Safari 需要）
       await unlockAudio()
+      
+      // 同時請求音訊播放權限
+      await requestAudioPermissions()
       
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       mediaRecorderRef.current = new MediaRecorder(stream)
@@ -323,7 +397,29 @@ export default function Home() {
               console.error('❌ 播放音頻失敗:', error.name, error.message)
               if (error.name === 'NotAllowedError') {
                 console.warn('⚠️ 音頻播放被阻擋，需要用戶交互')
-                handleAudioPlayRequest(audioUrl, text, resolve)
+                // 如果已經有音訊權限，直接顯示確認對話框
+                if (audioPermissionsGranted) {
+                  handleAudioPlayRequest(audioUrl, text, resolve)
+                } else {
+                  // 如果沒有權限，先嘗試請求權限
+                  requestAudioPermissions().then((granted) => {
+                    if (granted) {
+                      // 權限獲得後，重新嘗試播放
+                      setTimeout(() => {
+                        const retryPromise = audio.play()
+                        if (retryPromise !== undefined) {
+                          retryPromise.then(() => {
+                            console.log('✅ 重試播放成功')
+                          }).catch(() => {
+                            handleAudioPlayRequest(audioUrl, text, resolve)
+                          })
+                        }
+                      }, 100)
+                    } else {
+                      handleAudioPlayRequest(audioUrl, text, resolve)
+                    }
+                  })
+                }
               } else if (error.name === 'NotSupportedError') {
                 console.warn('⚠️ 音頻格式不支援，跳過播放')
                     setIsSpeaking(false)
@@ -470,7 +566,8 @@ export default function Home() {
   const handleStageButton = async () => {
     switch (currentStage) {
       case 'home':
-        // 從首頁進入上傳階段
+        // 從首頁進入上傳階段，同時請求音訊權限
+        await requestAudioPermissions()
         setCurrentStage('upload')
         break
       
