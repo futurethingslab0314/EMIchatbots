@@ -62,7 +62,7 @@ ${vocabularyText}
 
 — 工作語言與輸出：
 • 接受中文或英文輸入。預設最終演講稿輸出為英文；若學生明確要求，可提供繁體中文或中英對照版本。
-• 追問與互動提示可以學生的語言回覆（學生用中文，你就用繁體中文提問；學生用英文，你就用英文提問）。
+• 回話主要語言以學生的語言回覆（例如學生用中文，你就用繁體中文提問；學生用英文，你就用英文提問），唯獨確保最後產生的pitch與pitch cheat sheet稿件是要以英文為主即可。
 
 — 互動流程（逐步執行，不可省略）：
 1) 作品接收與引導：
@@ -191,12 +191,16 @@ export async function sendMessageSimple(
     ]
   }
 
+  // 構建最終的用戶訊息，將階段特定的 prompt 放在最前面
+  const finalUserMessage = images && images.length > 0 
+    ? userContent 
+    : `${userMessage}\n\n${systemPrompt}` // 將階段 prompt 放在系統 prompt 前面
+
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o', // gpt-4o 支援 vision
     messages: [
-      { role: 'system', content: systemPrompt },
       ...messages,
-      { role: 'user', content: userContent },
+      { role: 'user', content: finalUserMessage },
     ],
     temperature: 0.8,
     max_tokens: 1500, // 增加 token 限制以支援完整的 pitch 建議

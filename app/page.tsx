@@ -523,6 +523,7 @@ export default function Home() {
         if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
             (currentStage === 'qa-improve' && nextStage === 'confirm-summary')) {
           setTimeout(async () => {
+            // 使用 nextStage 作為觸發的階段，而不是 currentStage
             await triggerStageAction(nextStage)
           }, 500) // 稍微延遲，確保狀態更新完成
         }
