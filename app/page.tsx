@@ -518,6 +518,14 @@ export default function Home() {
       // 更新階段
       if (nextStage) {
         setCurrentStage(nextStage)
+        
+        // 只有特定階段轉換才自動觸發 AI 回應
+        if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
+            (currentStage === 'qa-improve' && nextStage === 'confirm-summary')) {
+          setTimeout(async () => {
+            await triggerStageAction(nextStage)
+          }, 500) // 稍微延遲，確保狀態更新完成
+        }
       }
 
       // 儲存生成的 pitch
@@ -579,6 +587,8 @@ export default function Home() {
           return
         }
         setCurrentStage('free-description')
+        // 自動觸發 AI 引導用戶進行 Free Share
+        await triggerStageAction('free-description')
         break
       
       case 'free-description':
