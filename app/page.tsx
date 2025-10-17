@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 import { motion, AnimatePresence } from 'motion/react'
-import { Camera, Image as ImageIcon, Mic, MicOff, Volume2, ChevronRight } from 'lucide-react'
+import { Camera, Image as ImageIcon, Mic, MicOff, Volume2 } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant' | 'system'
@@ -15,7 +15,6 @@ interface Message {
 type ConversationStage = 
   | 'home'             // 首頁/歡迎頁面
   | 'upload'           // 上傳照片階段
-  | 'ai-intro'         // AI 教練介紹
   | 'free-description' // 自由描述作品
   | 'qa-improve'       // Bot 追問細節
   | 'confirm-summary'  // 確認設計重點
@@ -277,10 +276,11 @@ export default function Home() {
       if (nextStage) {
         setCurrentStage(nextStage)
         
-        // 如果轉換到 qa-improve 階段，立即觸發 AI 回應來顯示四個問題
-        if (nextStage === 'qa-improve') {
+        // 自動觸發 AI 回應的條件
+        if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
+            (currentStage === 'qa-improve' && nextStage === 'confirm-summary')) {
           setTimeout(async () => {
-            await triggerStageAction('qa-improve')
+            await triggerStageAction(nextStage)
           }, 500) // 稍微延遲，確保狀態更新完成
         }
       }
@@ -729,7 +729,6 @@ export default function Home() {
     const colorMap: Record<ConversationStage, string> = {
       'home': 'from-black to-black',
       'upload': 'from-slate-100 to-slate-200',
-      'ai-intro': 'from-blue-400 to-blue-500',
       'free-description': 'from-orange-400 to-orange-500',
       'qa-improve': 'from-yellow-400 to-yellow-500',
       'confirm-summary': 'from-green-400 to-green-500',
@@ -746,7 +745,6 @@ export default function Home() {
     const titleMap: Record<ConversationStage, string> = {
       'home': 'Pitch Coach',
       'upload': 'Upload Work',
-      'ai-intro': 'AI Intro',
       'free-description': 'Free Share',
       'qa-improve': 'Q&A Time',
       'confirm-summary': 'Confirm Focus',
@@ -763,7 +761,6 @@ export default function Home() {
     const stepMap: Record<ConversationStage, number> = {
       'home': 0,
       'upload': 1,
-      'ai-intro': 2, // 保留以備不時之需
       'free-description': 2,
       'qa-improve': 3,
       'confirm-summary': 4,
@@ -780,7 +777,6 @@ export default function Home() {
     const labels: Record<ConversationStage | 'intro', string> = {
       'home': '首頁 / Home',
       'upload': '上傳作品照片 / Upload Your Design',
-      'ai-intro': 'AI 教練介紹 / Introduction',
       'free-description': '自由描述 / Free Description',
       'qa-improve': '回答問題與細節 / Add Details',
       'confirm-summary': '確認設計重點 / Confirm Summary',
@@ -798,7 +794,6 @@ export default function Home() {
     const labels: Record<ConversationStage, string> = {
       'home': '點擊開始 Start',
       'upload': '點擊麥克風開始對話 Start Conversation',
-      'ai-intro': '等待 AI 教練介紹...',
       'free-description': '🎤 自由描述作品 Free Description',
       'qa-improve': '🎤 回答問題 / 增加細節 Add Details',
       'confirm-summary': '確認後點擊上方按鈕 Confirm Summary',
@@ -874,9 +869,6 @@ export default function Home() {
                       Step {getStepNumber()}/8
           </p>
         </div>
-                  <button className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/10 flex items-center justify-center">
-                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-black" />
-                </button>
               </div>
               </div>
             )}
