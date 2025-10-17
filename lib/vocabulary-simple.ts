@@ -1,9 +1,5 @@
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 // 從 Google Sheets 或 URL 下載詞彙表（純文字）
 async function downloadVocabularyText(url: string): Promise<string> {
   // 如果是 Google Sheets，轉換為 CSV 導出
@@ -166,6 +162,7 @@ export async function getSystemPrompt(): Promise<string> {
 
 // 創建對話（支援圖片）
 export async function sendMessageSimple(
+  openai: OpenAI,
   messages: any[],
   userMessage: string,
   images?: string[]
@@ -207,6 +204,4 @@ export async function sendMessageSimple(
 
   return completion.choices[0].message.content || '抱歉，我無法生成回覆。'
 }
-
-export { openai }
 

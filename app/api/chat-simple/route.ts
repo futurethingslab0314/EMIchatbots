@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { openai, sendMessageSimple } from '@/lib/vocabulary-simple'
+import { sendMessageSimple } from '@/lib/vocabulary-simple'
+import OpenAI from 'openai'
 
 // 定義對話階段
 type ConversationStage = 
@@ -74,10 +75,23 @@ export async function POST(request: NextRequest) {
         throw new Error(`未定義的階段 prompt: ${currentStage}`)
       }
 
+      // 檢查 API Key
+      if (!process.env.OPENAI_API_KEY) {
+        return NextResponse.json({ 
+          error: 'OpenAI API Key 未配置，請聯繫管理員' 
+        }, { status: 500 })
+      }
+
+      // 初始化 OpenAI 客戶端
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      })
+
       // 在 free-description 階段需要傳送圖片（讓 AI 看到作品）
       const shouldSendImages = currentStage === 'free-description'
 
       const reply = await sendMessageSimple(
+        openai,
         messages,
         stagePrompt,
         shouldSendImages && images.length > 0 ? images : undefined
@@ -121,6 +135,18 @@ export async function POST(request: NextRequest) {
       throw new Error('缺少音訊檔案')
     }
 
+    // 檢查 API Key
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ 
+        error: 'OpenAI API Key 未配置，請聯繫管理員' 
+      }, { status: 500 })
+    }
+
+    // 初始化 OpenAI 客戶端
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: 'whisper-1',
@@ -143,6 +169,7 @@ export async function POST(request: NextRequest) {
     const shouldSendImages = currentStage === 'free-description'
 
     const assistantReply = await sendMessageSimple(
+      openai,
       messages,
       contextPrompt,
       shouldSendImages && images.length > 0 ? images : undefined
