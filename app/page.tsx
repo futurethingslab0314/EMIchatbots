@@ -147,6 +147,8 @@ export default function Home() {
       mediaRecorderRef.current.stop()
       setIsRecording(false)
       setUserTranscript('')
+      // 顯示處理中狀態，直到後端回應完成（processAudio finally 會關閉）
+      setIsProcessing(true)
       
       if (recognitionRef.current) {
         recognitionRef.current.stop()
@@ -710,20 +712,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      {/* Phone Frame */}
-      <div className="relative w-full max-w-[430px] h-[932px] bg-black rounded-[60px] shadow-2xl overflow-hidden border-[14px] border-black">
-        {/* Phone Notch */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[30px] bg-black rounded-b-3xl z-50"></div>
-
-        {/* Status Bar */}
-        <div className="absolute top-0 left-0 right-0 h-[44px] px-6 flex items-center justify-between z-40 text-xs">
-          <span className="text-black/70">9:41</span>
-          <div className="flex items-center gap-1">
-            <span className="text-black/70">100%</span>
-          </div>
-        </div>
-
+    <>
+      <div className="min-h-screen w-full overflow-hidden">
         {/* Content Area with Animation */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -732,43 +722,43 @@ export default function Home() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className={`w-full h-full bg-gradient-to-br ${getStepColor()} pt-[44px]`}
+            className={`min-h-screen w-full max-w-screen-lg mx-auto bg-gradient-to-br ${getStepColor()}`}
           >
             {/* Header */}
             {currentStage !== 'home' && (
-              <div className="px-6 py-4">
+              <div className="px-6 md:px-8 lg:px-12 py-4 md:py-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h1 className="text-2xl text-black">
+                    <h1 className="text-3xl md:text-4xl lg:text-5xl text-black">
                       {getStepTitle()}
-                    </h1>
-                    <p className="text-sm text-black/60">
+          </h1>
+                    <p className="text-sm md:text-base text-black/60">
                       Step {getStepNumber()}/8
-                    </p>
-                  </div>
-                  <button className="w-8 h-8 rounded-full bg-black/10 flex items-center justify-center">
-                    <ChevronRight className="w-5 h-5 text-black" />
+          </p>
+        </div>
+                  <button className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/10 flex items-center justify-center">
+                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-black" />
                   </button>
                 </div>
               </div>
             )}
 
             {/* Main Content */}
-            <div className="px-6 flex-1 flex flex-col justify-between pb-8">
+            <div className="px-6 md:px-8 lg:px-12 flex-1 flex flex-col justify-between pb-8 md:pb-12">
               {/* Home/Landing Page */}
               {currentStage === 'home' && (
                 <div className="flex-1 flex flex-col justify-between pt-16 pb-12">
                   <div className="flex-1 flex flex-col justify-between">
                     {/* Title Section */}
                     <div className="space-y-3">
-                      <h1 className="text-5xl text-white uppercase leading-tight tracking-tight">
+                      <h1 className="text-5xl md:text-6xl lg:text-7xl text-white uppercase leading-tight tracking-tight">
                         3-MINUTE
                         <br />
                         DESIGN
                         <br />
                         PITCH
                       </h1>
-                      <p className="text-xl text-white/50 uppercase tracking-wide">
+                      <p className="text-xl md:text-2xl lg:text-3xl text-white/50 uppercase tracking-wide">
                         COACH
                       </p>
                     </div>
@@ -807,24 +797,24 @@ export default function Home() {
                         <div className="flex items-center gap-3">
                           <div className="w-1 h-8 bg-white"></div>
                           <div>
-                            <p className="text-sm text-white/60 uppercase tracking-wide">
+                            <p className="text-sm md:text-base text-white/60 uppercase tracking-wide">
                               01
                             </p>
-                            <p className="text-white">
+                            <p className="text-white text-sm md:text-base">
                               Upload Design Work
                             </p>
                           </div>
                         </div>
-                      </div>
-
+              </div>
+              
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
                           <div className="w-1 h-8 bg-white"></div>
                           <div>
-                            <p className="text-sm text-white/60 uppercase tracking-wide">
+                            <p className="text-sm md:text-base text-white/60 uppercase tracking-wide">
                               02
                             </p>
-                            <p className="text-white">
+                            <p className="text-white text-sm md:text-base">
                               Practice with AI Coach
                             </p>
                           </div>
@@ -835,10 +825,10 @@ export default function Home() {
                         <div className="flex items-center gap-3">
                           <div className="w-1 h-8 bg-white"></div>
                           <div>
-                            <p className="text-sm text-white/60 uppercase tracking-wide">
+                            <p className="text-sm md:text-base text-white/60 uppercase tracking-wide">
                               03
                             </p>
-                            <p className="text-white">
+                            <p className="text-white text-sm md:text-base">
                               Generate Pitch Notes
                             </p>
                           </div>
@@ -850,7 +840,7 @@ export default function Home() {
                   {/* Start Button */}
                   <motion.button
                     onClick={handleStageButton}
-                    className="w-full py-5 bg-white text-black rounded-none text-lg uppercase tracking-widest border-4 border-white hover:bg-white/90 transition-colors"
+                    className="w-full py-5 md:py-6 bg-white text-black rounded-none text-lg md:text-xl uppercase tracking-widest border-4 border-white hover:bg-white/90 transition-colors"
                     whileTap={{ scale: 0.98 }}
                   >
                     START
@@ -861,25 +851,25 @@ export default function Home() {
               {/* Upload Step */}
               {currentStage === 'upload' && (
                 <div className="flex-1 flex flex-col">
-                  {uploadedImages.length > 0 && (
+          {uploadedImages.length > 0 && (
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       {uploadedImages.map((img, idx) => (
-                        <img
+                  <img
                           key={idx}
-                          src={img}
+                    src={img}
                           alt={`Work ${idx}`}
                           className="w-full aspect-square object-cover rounded-2xl"
                         />
-                      ))}
-                    </div>
-                  )}
+              ))}
+            </div>
+          )}
 
                   <div className="flex-1 flex items-center justify-center">
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-48 h-48 rounded-full bg-black/10 flex items-center justify-center backdrop-blur-sm hover:bg-black/20 transition-all"
+                      className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full bg-black/10 flex items-center justify-center backdrop-blur-sm hover:bg-black/20 transition-all"
                     >
-                      <Camera className="w-24 h-24 text-black/40" />
+                      <Camera className="w-24 h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 text-black/40" />
                     </button>
                   </div>
 
@@ -895,7 +885,7 @@ export default function Home() {
                   {uploadedImages.length > 0 && (
                     <button
                       onClick={handleStageButton}
-                      className="w-full py-4 bg-black text-white rounded-full text-lg uppercase tracking-wide"
+                      className="w-full py-4 md:py-5 bg-black text-white rounded-full text-lg md:text-xl uppercase tracking-wide"
                     >
                       Start Practice
                     </button>
@@ -911,7 +901,7 @@ export default function Home() {
                 <div className="flex-1 flex flex-col items-center justify-between">
                   {/* Visual Indicator */}
                   <div className="flex-1 flex items-center justify-center relative">
-                    <div className="relative w-64 h-64">
+                    <div className="relative w-64 h-64 md:w-80 md:h-80">
                       {/* Outer ring */}
                       <div className="absolute inset-0 rounded-full bg-black/10"></div>
 
@@ -920,7 +910,7 @@ export default function Home() {
                         {currentStage === 'ai-intro' && isSpeaking ? (
                           <div className="text-center">
                             <motion.div
-                              className="text-4xl text-black uppercase tracking-wider"
+                              className="text-4xl md:text-5xl lg:text-6xl text-black uppercase tracking-wider"
                               animate={{
                                 opacity: [0.4, 1, 0.4],
                               }}
@@ -931,7 +921,16 @@ export default function Home() {
                             >
                               AI
                             </motion.div>
-                            <p className="text-sm text-black/60 mt-2">SPEAKING</p>
+                            <p className="text-sm md:text-base text-black/60 mt-2">SPEAKING</p>
+                          </div>
+                        ) : isProcessing ? (
+                          <div className="text-center">
+                            <motion.div
+                              className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                            />
+                            <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Processing</p>
                           </div>
                         ) : (
                           <div className="grid grid-cols-8 gap-2">
@@ -970,24 +969,29 @@ export default function Home() {
 
                   {/* Timer */}
                   <div className="text-center mb-4">
-                    <div className="text-4xl text-black">
+                    <div className="text-4xl md:text-5xl lg:text-6xl text-black">
                       {formatTime(recordingTime)}
                     </div>
                     {isRecording && (
-                      <div className="text-sm text-black/60 mt-1">
-                        Recording...
+                      <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
+                        Recording
                       </div>
                     )}
+                    {isProcessing && (
+                      <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
+                        Listening
+                    </div>
+                    )}
                     {currentStage === 'ai-intro' && isSpeaking && (
-                      <div className="text-sm text-black/60 mt-1">
-                        AI is speaking...
+                      <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
+                        AI Speaking
                       </div>
                     )}
                   </div>
 
                   {/* Subtitle Area */}
-                  <div className="w-full min-h-[80px] bg-black/10 rounded-3xl p-4 mb-6">
-                    <p className="text-center text-black/80 text-sm leading-relaxed">
+                  <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">
+                    <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
                       {currentSubtitle || userTranscript || "Tap to start speaking..."}
                     </p>
                   </div>
@@ -996,39 +1000,45 @@ export default function Home() {
                   <div className="w-full flex flex-col items-center gap-3">
                     <button
                       onClick={
-                        currentStage === 'ai-intro'
+                        currentStage === 'ai-intro' || isProcessing
                           ? undefined
                           : isRecording
                           ? stopRecording
                           : startRecording
                       }
                       disabled={currentStage === 'ai-intro' || isProcessing}
-                      className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${
+                      className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all ${
                         isRecording
-                          ? "bg-black text-white"
-                          : currentStage === 'ai-intro'
-                            ? "bg-black/20 text-black/40 cursor-not-allowed"
-                            : "bg-black text-white hover:scale-105"
+                          ? 'bg-black text-white'
+                          : (currentStage === 'ai-intro' || isProcessing)
+                            ? 'bg-black/20 text-black/40 cursor-not-allowed'
+                            : 'bg-black text-white hover:scale-105'
                       }`}
                     >
-                      <div className="w-16 h-16 rounded-full bg-white/20"></div>
+                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/20"></div>
                     </button>
 
                     {/* Skip button for AI Intro */}
                     {currentStage === 'ai-intro' && (
-                      <button
+                    <button
                         onClick={() => {
                           setIsSpeaking(false)
                           setCurrentStage('free-description')
                           setCurrentSubtitle('')
                         }}
-                        className="text-black/60 text-sm underline hover:text-black"
+                        className="text-black/60 text-sm md:text-base underline hover:text-black"
                       >
                         Skip & Continue
-                      </button>
+                    </button>
                     )}
-                  </div>
-                </div>
+                    {currentStage !== 'ai-intro' && !isProcessing && (
+                        <div className="text-xs md:text-sm text-black/50 text-center uppercase tracking-wide">
+                          <p>Microphone permission needed</p>
+                          <p>Tap button to enable</p>
+                        </div>
+                    )}
+                        </div>
+                      </div>
               )}
 
               {/* Confirm Focus Step */}
@@ -1036,35 +1046,35 @@ export default function Home() {
                 <div className="flex-1 flex flex-col justify-between">
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center space-y-6">
-                      <div className="w-24 h-24 mx-auto border-4 border-black rounded-full flex items-center justify-center">
-                        <div className="w-12 h-12 bg-black rounded-full"></div>
-                      </div>
-                      <div>
-                        <p className="text-sm text-black/60 uppercase tracking-wide mb-2">READY</p>
-                        <p className="text-3xl text-black uppercase tracking-tight leading-tight">
+                      <div className="w-24 h-24 md:w-32 md:h-32 mx-auto border-4 border-black rounded-full flex items-center justify-center">
+                        <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full"></div>
+                            </div>
+                          <div>
+                        <p className="text-sm md:text-base text-black/60 uppercase tracking-wide mb-2">READY</p>
+                        <p className="text-3xl md:text-4xl lg:text-5xl text-black uppercase tracking-tight leading-tight">
                           GENERATE<br />3-MINUTE<br />PITCH
                         </p>
-                      </div>
-                    </div>
-                  </div>
+                            </div>
+                            </div>
+                          </div>
 
                   <div className="flex space-x-4 justify-center">
                     <button
                       onClick={() => handleConfirmStageButton('redescribe')}
                       disabled={isProcessing || isSpeaking}
-                      className="px-6 py-3 bg-black/10 text-black rounded-full text-sm uppercase tracking-wide"
+                      className="px-6 py-3 md:px-8 md:py-4 bg-black/10 text-black rounded-full text-sm md:text-base uppercase tracking-wide"
                     >
                       Redescribe
                     </button>
                     <button
                       onClick={() => handleConfirmStageButton('confirm')}
                       disabled={isProcessing || isSpeaking}
-                      className="px-6 py-3 bg-black text-white rounded-full text-sm uppercase tracking-wide"
+                      className="px-6 py-3 md:px-8 md:py-4 bg-black text-white rounded-full text-sm md:text-base uppercase tracking-wide"
                     >
                       Generate
                     </button>
-                  </div>
-                </div>
+                            </div>
+                            </div>
               )}
 
               {/* Generate Pitch Step */}
@@ -1072,25 +1082,25 @@ export default function Home() {
                 <div className="flex-1 flex flex-col justify-between">
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center space-y-6">
-                      <div className="w-24 h-24 mx-auto border-4 border-black rounded-full flex items-center justify-center">
-                        <div className="w-12 h-12 bg-black rounded-full"></div>
+                      <div className="w-24 h-24 md:w-32 md:h-32 mx-auto border-4 border-black rounded-full flex items-center justify-center">
+                        <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full"></div>
                       </div>
-                      <div>
-                        <p className="text-sm text-black/60 uppercase tracking-wide mb-2">GENERATED</p>
-                        <p className="text-3xl text-black uppercase tracking-tight leading-tight">
+                          <div>
+                        <p className="text-sm md:text-base text-black/60 uppercase tracking-wide mb-2">GENERATED</p>
+                        <p className="text-3xl md:text-4xl lg:text-5xl text-black uppercase tracking-tight leading-tight">
                           PITCH<br />READY
                         </p>
-                      </div>
-                    </div>
-                  </div>
+                            </div>
+                            </div>
+                          </div>
 
-                  <button
-                    onClick={handleStageButton}
-                    disabled={isProcessing || isSpeaking}
-                    className="w-full py-4 bg-black text-white rounded-full text-lg uppercase tracking-wide"
-                  >
+                    <button
+                      onClick={handleStageButton}
+                      disabled={isProcessing || isSpeaking}
+                    className="w-full py-4 md:py-5 bg-black text-white rounded-full text-lg md:text-xl uppercase tracking-wide"
+                    >
                     Start Practice
-                  </button>
+                    </button>
                 </div>
               )}
 
@@ -1099,10 +1109,10 @@ export default function Home() {
                 <div className="flex-1 flex flex-col justify-between">
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-8xl text-black mb-4">
+                      <div className="text-8xl md:text-9xl lg:text-[12rem] text-black mb-4">
                         {evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement}
-                      </div>
-                      <div className="w-48 h-2 bg-black/20 rounded-full mx-auto overflow-hidden">
+                    </div>
+                      <div className="w-48 md:w-64 lg:w-80 h-2 md:h-3 bg-black/20 rounded-full mx-auto overflow-hidden">
                         <motion.div
                           className="h-full bg-black"
                           initial={{ width: 0 }}
@@ -1115,20 +1125,20 @@ export default function Home() {
                           }}
                         />
                       </div>
-                      <p className="mt-4 text-black/60">
+                      <p className="mt-4 text-black/60 text-sm md:text-base">
                         Great work!
-                      </p>
-                    </div>
+                    </p>
+                  </div>
                   </div>
 
                   <button
                     onClick={handleStageButton}
-                    className="w-full py-4 bg-black text-white rounded-full text-lg uppercase tracking-wide"
+                    className="w-full py-4 md:py-5 bg-black text-white rounded-full text-lg md:text-xl uppercase tracking-wide"
                   >
                     View Notes
                   </button>
-                </div>
-              )}
+                  </div>
+                )}
 
               {/* View Notes Step */}
               {currentStage === 'keywords' && (
@@ -1136,7 +1146,7 @@ export default function Home() {
                   <div className="flex-1 overflow-y-auto space-y-3">
                     {messages.length > 0 && messages[messages.length - 1]?.content && (
                       <div className="p-4 bg-black/10 rounded-2xl">
-                        <p className="text-sm text-black whitespace-pre-wrap">
+                        <p className="text-sm md:text-base text-black whitespace-pre-wrap">
                           {messages[messages.length - 1].content}
                         </p>
                       </div>
@@ -1151,7 +1161,7 @@ export default function Home() {
                         setPendingAudioText('✅ 已複製到剪貼簿！')
                         setShowAudioModal(true)
                       }}
-                      className="py-3 bg-black/10 text-black rounded-full uppercase tracking-wide text-sm"
+                      className="py-3 md:py-4 bg-black/10 text-black rounded-full uppercase tracking-wide text-sm md:text-base"
                     >
                       Copy
                     </button>
@@ -1160,7 +1170,7 @@ export default function Home() {
                         setCurrentStage('practice-pitch')
                       }}
                       disabled={isProcessing || isSpeaking}
-                      className="py-3 bg-black text-white rounded-full uppercase tracking-wide text-sm"
+                      className="py-3 md:py-4 bg-black text-white rounded-full uppercase tracking-wide text-sm md:text-base"
                     >
                       Practice
                     </button>
@@ -1168,30 +1178,27 @@ export default function Home() {
                 </div>
               )}
 
-            </div>
+              </div>
           </motion.div>
         </AnimatePresence>
-
-        {/* Home Indicator */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/30 rounded-full"></div>
       </div>
 
       {/* 音頻播放確認模態對話框 */}
       {showAudioModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 md:p-8">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md md:max-w-lg w-full p-6 md:p-8">
             <div className="text-center">
               <div className="mb-4">
                 <svg className="w-16 h-16 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                 </svg>
               </div>
-              
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">
+
+              <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
                 {pendingAudioUrl ? '音頻播放確認 / Audio Playback Confirmation' : '通知 / Notification'}
               </h3>
               
-              <p className="text-gray-600 mb-6 leading-relaxed">
+              <p className="text-gray-600 mb-6 leading-relaxed text-sm md:text-base">
                 {pendingAudioText || '請點擊「確定」以播放語音回覆 / Please click "OK" to play audio'}
               </p>
               
@@ -1210,13 +1217,13 @@ export default function Home() {
                       pendingAudioResolveRef.current = null
                     }
                   }}
-                  className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                  className="px-6 py-3 md:px-8 md:py-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm md:text-base"
                 >
                   取消 / Cancel
                 </button>
                 <button
                   onClick={confirmAudioPlay}
-                  className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                  className="px-6 py-3 md:px-8 md:py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm md:text-base"
                 >
                   確定 / OK
                 </button>
@@ -1225,7 +1232,7 @@ export default function Home() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
