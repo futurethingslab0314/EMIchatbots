@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     const imagesStr = formData.get('images') as string
     const currentStage = (formData.get('stage') as ConversationStage) || 'upload'
     const triggerStage = formData.get('triggerStage') === 'true'
+    const isRecording = formData.get('isRecording') === 'true'
     const generatedPitch = formData.get('generatedPitch') as string
 
     console.log('📨 收到請求:', { currentStage, triggerStage })
@@ -192,15 +193,12 @@ export async function POST(request: NextRequest) {
     let nextStage: ConversationStage | undefined
 
     // 根據回應內容判斷是否該進入下一階段
-    if (currentStage === 'free-description' && userText && userText.trim().length > 0) {
+    if (currentStage === 'free-description' && userText && userText.trim().length > 0 && isRecording) {
       // 用戶在 free-description 階段錄音完成後，轉到 qa-improve 階段
       nextStage = 'qa-improve'
-    } else if (currentStage === 'qa-improve' && userText && userText.trim().length > 0) {
+    } else if (currentStage === 'qa-improve' && userText && userText.trim().length > 0 && isRecording) {
       // 用戶在 qa-improve 階段錄音完成後，轉到 confirm-summary 階段
       nextStage = 'confirm-summary'
-    } else if (currentStage === 'confirm-summary' && userText && userText.trim().length > 0) {
-      // 用戶在 confirm-summary 階段錄音完成後，轉到 generate-pitch 階段
-      nextStage = 'generate-pitch'
     } else if (currentStage === 'evaluation') {
       // 評分完成，轉到關鍵字階段
       nextStage = 'keywords'

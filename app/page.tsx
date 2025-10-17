@@ -77,6 +77,7 @@ export default function Home() {
   const [audioPermissionsGranted, setAudioPermissionsGranted] = useState(false)
   const [isRequestingPermissions, setIsRequestingPermissions] = useState(false)
 
+
   // 更新錄音語言設定
   const updateRecognitionLanguage = (stage: ConversationStage) => {
     if (recognitionRef.current) {
@@ -270,6 +271,7 @@ export default function Home() {
       formData.append('images', JSON.stringify(uploadedImages))
       formData.append('stage', currentStage)
       formData.append('triggerStage', 'false')
+      formData.append('isRecording', 'true') // 標記這是錄音觸發的
       
       // 如果有生成的 pitch，也傳送（用於評分）
       if (generatedPitch) {
@@ -307,8 +309,7 @@ export default function Home() {
         
         // 只有特定階段轉換才自動觸發 AI 回應
         if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
-            (currentStage === 'qa-improve' && nextStage === 'confirm-summary') ||
-            (currentStage === 'confirm-summary' && nextStage === 'generate-pitch')) {
+            (currentStage === 'qa-improve' && nextStage === 'confirm-summary')) {
           setTimeout(async () => {
             // 使用 nextStage 作為觸發的階段，而不是 currentStage
             await triggerStageAction(nextStage)
@@ -560,8 +561,7 @@ export default function Home() {
         
         // 只有特定階段轉換才自動觸發 AI 回應
         if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
-            (currentStage === 'qa-improve' && nextStage === 'confirm-summary') ||
-            (currentStage === 'confirm-summary' && nextStage === 'generate-pitch')) {
+            (currentStage === 'qa-improve' && nextStage === 'confirm-summary')) {
           setTimeout(async () => {
             // 使用 nextStage 作為觸發的階段，而不是 currentStage
             await triggerStageAction(nextStage)
@@ -646,8 +646,8 @@ export default function Home() {
         break
       
       case 'confirm-summary':
-        // 開始確認重點 → 啟動錄音
-        startRecording()
+        // confirm-summary 階段不需要錄音，由 handleConfirmStageButton 處理按鈕
+        // 這個階段只有 Generate 和 Redescribe 按鈕
         break
       
       case 'generate-pitch':
@@ -1035,7 +1035,7 @@ export default function Home() {
                           className="w-full aspect-square object-cover rounded-2xl"
                         />
               ))}
-                    </div>
+            </div>
           )}
 
                   <div className="flex-1 flex items-center justify-center">
@@ -1162,7 +1162,7 @@ export default function Home() {
                   <div className="text-center mb-4">
                     <div className="text-4xl md:text-5xl lg:text-6xl text-black">
                       {formatTime(recordingTime)}
-                            </div>
+                    </div>
                     {isRecording && (
                       <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
                         Recording
@@ -1171,7 +1171,7 @@ export default function Home() {
                     {isProcessing && (
                       <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
                         Listening
-                          </div>
+                    </div>
                     )}
                     {currentStage === 'free-description' && isSpeaking && (
                       <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
@@ -1226,10 +1226,10 @@ export default function Home() {
                         <div className="text-xs md:text-sm text-black/50 text-center uppercase tracking-wide">
                           <p>Microphone permission needed</p>
                           <p>Tap button to enable</p>
-                  </div>
+                        </div>
                 )}
                         </div>
-                  </div>
+                      </div>
                 )}
 
               {/* Confirm Focus Step */}
@@ -1239,25 +1239,25 @@ export default function Home() {
                     <div className="text-center space-y-6">
                       <div className="w-24 h-24 md:w-32 md:h-32 mx-auto border-4 border-black rounded-full flex items-center justify-center">
                         <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full"></div>
-                    </div>
+                            </div>
                           <div>
                         <p className="text-sm md:text-base text-black/60 uppercase tracking-wide mb-2">READY</p>
                         <p className="text-3xl md:text-4xl lg:text-5xl text-black uppercase tracking-tight leading-tight">
                           GENERATE<br />3-MINUTE<br />PITCH
                     </p>
-                  </div>
-              </div>
-              </div>
+                            </div>
+                            </div>
+                          </div>
 
                   {/* Subtitle Area */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">
                     <div className="space-y-2">
                       {/* 當前字幕 - 放在最上面 */}
-                      <div>
+                          <div>
                         <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
                           {currentSubtitle || "確認設計重點後，點擊 Generate 開始生成 3 分鐘 pitch..."}
                   </p>
-                </div>
+                            </div>
                       {/* 對話歷史 - 只顯示最近一句話 */}
                       {subtitleHistory.length > 0 && (
                         <div className="border-t border-black/20 pt-2">
@@ -1266,8 +1266,8 @@ export default function Home() {
                           </p>
             </div>
           )}
-                    </div>
-        </div>
+                            </div>
+                          </div>
 
                   <div className="flex space-x-4 justify-center">
               <button
@@ -1284,8 +1284,8 @@ export default function Home() {
                 >
                       Generate
                 </button>
-            </div>
-          </div>
+                            </div>
+                            </div>
         )}
 
               {/* Generate Pitch Step */}
@@ -1295,15 +1295,15 @@ export default function Home() {
                     <div className="text-center space-y-6">
                       <div className="w-24 h-24 md:w-32 md:h-32 mx-auto border-4 border-black rounded-full flex items-center justify-center">
                         <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full"></div>
-              </div>
+                        </div>
                           <div>
                         <p className="text-sm md:text-base text-black/60 uppercase tracking-wide mb-2">GENERATED</p>
                         <p className="text-3xl md:text-4xl lg:text-5xl text-black uppercase tracking-tight leading-tight">
                           PITCH<br />READY
                         </p>
-                            </div>
-                            </div>
-                          </div>
+                      </div>
+                    </div>
+                  </div>
 
                     <button
                       onClick={handleStageButton}
@@ -1356,7 +1356,7 @@ export default function Home() {
                               animate={{ width: `${(item.score / 20) * 100}%` }}
                               transition={{ duration: 0.8, delay: idx * 0.1 + 0.3 }}
                             />
-                          </div>
+                  </div>
                         </div>
                         
                         {/* 右側：大號分數 */}
@@ -1370,10 +1370,10 @@ export default function Home() {
                             {item.score}
                           </motion.div>
                           <p className="text-xs text-black/40">/20</p>
-                        </div>
+                    </div>
                       </motion.div>
                     ))}
-                  </div>
+              </div>
 
                   {/* 3️⃣ 字幕區域 */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mt-4">
@@ -1382,27 +1382,27 @@ export default function Home() {
                       <div>
                         <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
                           {currentSubtitle || "查看您的評分結果和改進建議..."}
-                        </p>
-                      </div>
+                  </p>
+                </div>
                       {/* 對話歷史 - 只顯示最近一句話 */}
                       {subtitleHistory.length > 0 && (
                         <div className="border-t border-black/20 pt-2">
                           <p className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
                             {subtitleHistory[subtitleHistory.length - 1]}
                           </p>
-                        </div>
-                      )}
+            </div>
+          )}
                     </div>
-                  </div>
+        </div>
 
                   {/* 4️⃣ 底部按鈕 */}
-                  <button
+              <button
                     onClick={handleStageButton}
                     className="w-full py-4 mt-4 bg-black text-white rounded-full text-lg uppercase tracking-wide"
-                  >
+              >
                     Generate Pitch Cheat Sheet
-                  </button>
-                </div>
+              </button>
+              </div>
                 )}
 
               {/* View Scores Step - Fallback when scores not parsed */}
@@ -1414,9 +1414,9 @@ export default function Home() {
                       <div className="space-y-2">
                         <h2 className="text-2xl md:text-3xl text-black">評分處理中...</h2>
                         <p className="text-sm md:text-base text-black/60">正在分析您的表現</p>
-                      </div>
-                    </div>
-                  </div>
+            </div>
+          </div>
+              </div>
 
                   {/* 字幕區域 */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6">
@@ -1426,17 +1426,17 @@ export default function Home() {
                         <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
                           {currentSubtitle || "正在生成評分結果..."}
                         </p>
-                      </div>
+              </div>
                       {/* 對話歷史 */}
                       {subtitleHistory.length > 0 && (
                         <div className="border-t border-black/20 pt-2">
                           <p className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
                             {subtitleHistory[subtitleHistory.length - 1]}
                           </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              </div>
+            )}
+          </div>
+        </div>
 
                   {/* 底部按鈕 */}
                   <button
