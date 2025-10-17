@@ -92,7 +92,8 @@ export async function POST(request: NextRequest) {
         openai,
         messages,
         stagePrompt,
-        shouldSendImages && images.length > 0 ? images : undefined
+        shouldSendImages && images.length > 0 ? images : undefined,
+        currentStage
       )
 
       console.log(`✅ 階段回應生成完成 ${shouldSendImages ? '（含圖片分析）' : '（純文字）'}`)
@@ -170,7 +171,8 @@ export async function POST(request: NextRequest) {
       openai,
       messages,
       contextPrompt,
-      shouldSendImages && images.length > 0 ? images : undefined
+      shouldSendImages && images.length > 0 ? images : undefined,
+      currentStage
     )
 
     console.log(`✅ 對話回應完成 ${shouldSendImages ? '（含圖片）' : '（純文字）'}`)

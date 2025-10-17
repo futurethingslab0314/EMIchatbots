@@ -165,9 +165,12 @@ export async function sendMessageSimple(
   openai: OpenAI,
   messages: any[],
   userMessage: string,
-  images?: string[]
+  images?: string[],
+  stage?: string
 ): Promise<string> {
-  const systemPrompt = await getSystemPrompt()
+  // 根據階段決定是否使用系統 prompt
+  const shouldUseSystemPrompt = stage === 'free-description' && images && images.length > 0
+  const systemPrompt = shouldUseSystemPrompt ? await getSystemPrompt() : ''
 
   // 準備使用者訊息（包含文字和圖片）
   let userContent: any = userMessage
@@ -191,17 +194,21 @@ export async function sendMessageSimple(
     ]
   }
 
-  // 構建最終的用戶訊息，將階段特定的 prompt 放在最前面
-  const finalUserMessage = images && images.length > 0 
-    ? userContent 
-    : `${userMessage}\n\n${systemPrompt}` // 將階段 prompt 放在系統 prompt 前面
+  // 構建 messages 陣列
+  const chatMessages: any[] = []
+  
+  // 只有在需要時才添加系統 prompt
+  if (systemPrompt) {
+    chatMessages.push({ role: 'system', content: systemPrompt })
+  }
+  
+  // 添加歷史訊息和當前用戶訊息
+  chatMessages.push(...messages)
+  chatMessages.push({ role: 'user', content: userContent })
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o', // gpt-4o 支援 vision
-    messages: [
-      ...messages,
-      { role: 'user', content: finalUserMessage },
-    ],
+    messages: chatMessages,
     temperature: 0.8,
     max_tokens: 1500, // 增加 token 限制以支援完整的 pitch 建議
   })
