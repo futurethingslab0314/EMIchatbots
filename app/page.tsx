@@ -31,6 +31,7 @@ export default function Home() {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [currentSubtitle, setCurrentSubtitle] = useState('')
   const [userTranscript, setUserTranscript] = useState('')
+  const [subtitleHistory, setSubtitleHistory] = useState<string[]>([])
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [currentStage, setCurrentStage] = useState<ConversationStage>('home')
   const [recordingTime, setRecordingTime] = useState(0)
@@ -215,6 +216,11 @@ export default function Home() {
 
       // 播放語音回覆並顯示字幕
       if (audioUrl) {
+        // 將用戶的文字和 AI 的回應都添加到歷史記錄中
+        if (transcription) {
+          setSubtitleHistory(prev => [...prev, transcription])
+        }
+        setSubtitleHistory(prev => [...prev, reply])
         await playAudioWithSubtitles(audioUrl, reply)
       }
     } catch (error) {
@@ -431,6 +437,8 @@ export default function Home() {
 
       // 播放語音
       if (audioUrl) {
+        // 將新的字幕添加到歷史記錄中
+        setSubtitleHistory(prev => [...prev, reply])
         await playAudioWithSubtitles(audioUrl, reply)
       }
     } catch (error) {
@@ -464,7 +472,7 @@ export default function Home() {
         break
       
       case 'upload':
-        // 確認上傳作品 → AI 介紹
+        // 確認上傳作品 → 自動觸發 AI 引導
         if (uploadedImages.length === 0) {
           setPendingAudioUrl('')
           setPendingAudioText('請至少上傳一張作品照片')
@@ -472,6 +480,8 @@ export default function Home() {
           return
         }
         setCurrentStage('free-description')
+        // 自動觸發 AI 引導用戶進行 Free Share
+        await triggerStageAction('free-description')
         break
       
       case 'free-description':
@@ -514,6 +524,7 @@ export default function Home() {
         setEvaluationScores(null)
         setUserTranscript('')
         setCurrentSubtitle('')
+        setSubtitleHistory([])
         setUploadedImages([])
         setIsRecording(false)
         setIsProcessing(false)
@@ -926,7 +937,18 @@ export default function Home() {
 
                       {/* Dot pattern */}
                       <div className="absolute inset-0 flex items-center justify-center">
-                        {isProcessing ? (
+                        {currentStage === 'free-description' && isSpeaking ? (
+                          <div className="text-center">
+                            <motion.div
+                              className="text-4xl md:text-5xl lg:text-6xl text-black uppercase tracking-wider"
+                              animate={{ opacity: [0.4, 1, 0.4] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            >
+                              AI
+                            </motion.div>
+                            <p className="text-sm md:text-base text-black/60 mt-2">SPEAKING</p>
+                          </div>
+                        ) : isProcessing ? (
                           <div className="text-center">
                             <motion.div
                               className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
@@ -985,30 +1007,50 @@ export default function Home() {
                         Listening
                     </div>
                     )}
+                    {currentStage === 'free-description' && isSpeaking && (
+                      <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
+                        AI Speaking
+                      </div>
+                    )}
                           </div>
 
                   {/* Subtitle Area */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">
-                    <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
-                      {currentSubtitle || userTranscript || "Tap to start speaking..."}
-                    </p>
+                    <div className="space-y-2">
+                      {/* 對話歷史 */}
+                      {subtitleHistory.length > 0 && (
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {subtitleHistory.slice(-3).map((text, index) => (
+                            <p key={index} className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
+                              {text}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {/* 當前字幕 */}
+                      <div className="border-t border-black/20 pt-2">
+                        <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
+                          {currentSubtitle || userTranscript || "Tap to start speaking..."}
+                        </p>
+                      </div>
+                    </div>
                         </div>
 
                   {/* Action Buttons */}
                   <div className="w-full flex flex-col items-center gap-3">
                     <button
                       onClick={
-                        isProcessing
+                        (currentStage === 'free-description' && isSpeaking) || isProcessing
                           ? undefined
                           : isRecording
                           ? stopRecording
                           : startRecording
                       }
-                      disabled={isProcessing}
+                      disabled={(currentStage === 'free-description' && isSpeaking) || isProcessing}
                       className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all ${
                         isRecording
                           ? 'bg-black text-white'
-                          : isProcessing
+                          : (currentStage === 'free-description' && isSpeaking) || isProcessing
                             ? 'bg-black/20 text-black/40 cursor-not-allowed'
                             : 'bg-black text-white hover:scale-105'
                       }`}
@@ -1016,11 +1058,11 @@ export default function Home() {
                       <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/20"></div>
                     </button>
 
-                    {!isProcessing && (
+                    {!isProcessing && !(currentStage === 'free-description' && isSpeaking) && (
                         <div className="text-xs md:text-sm text-black/50 text-center uppercase tracking-wide">
                           <p>Microphone permission needed</p>
                           <p>Tap button to enable</p>
-                  </div>
+                        </div>
                 )}
                         </div>
                   </div>
@@ -1045,9 +1087,24 @@ export default function Home() {
 
                   {/* Subtitle Area */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">
-                    <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
-                      {currentSubtitle || "確認設計重點後，點擊 Generate 開始生成 3 分鐘 pitch..."}
-                    </p>
+                    <div className="space-y-2">
+                      {/* 對話歷史 */}
+                      {subtitleHistory.length > 0 && (
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {subtitleHistory.slice(-3).map((text, index) => (
+                            <p key={index} className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
+                              {text}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {/* 當前字幕 */}
+                      <div className="border-t border-black/20 pt-2">
+                        <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
+                          {currentSubtitle || "確認設計重點後，點擊 Generate 開始生成 3 分鐘 pitch..."}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex space-x-4 justify-center">
