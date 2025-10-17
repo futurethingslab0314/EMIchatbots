@@ -292,7 +292,7 @@ export default function Home() {
       audio.oncanplaythrough = () => {
         console.log('✅ 音頻加載完成，準備播放')
       }
-
+      
       audio.onloadstart = () => {
         console.log('🔄 開始加載音頻:', audioUrl)
       }
@@ -320,10 +320,10 @@ export default function Home() {
                 handleAudioPlayRequest(audioUrl, text, resolve)
               } else if (error.name === 'NotSupportedError') {
                 console.warn('⚠️ 音頻格式不支援，跳過播放')
-                setIsSpeaking(false)
-                setCurrentSubtitle('')
-                audio.remove()
-                resolve()
+                    setIsSpeaking(false)
+                    setCurrentSubtitle('')
+                    audio.remove()
+                    resolve()
               } else {
                 setIsSpeaking(false)
                 setCurrentSubtitle('')
@@ -470,12 +470,6 @@ export default function Home() {
           setShowAudioModal(true)
           return
         }
-        setCurrentStage('ai-intro')
-        await triggerStageAction('ai-intro')
-        break
-      
-      case 'ai-intro':
-        // AI 介紹完成後進入自由描述階段
         setCurrentStage('free-description')
         break
       
@@ -650,13 +644,13 @@ export default function Home() {
     const stepMap: Record<ConversationStage, number> = {
       'home': 0,
       'upload': 1,
-      'ai-intro': 2,
-      'free-description': 3,
-      'qa-improve': 4,
-      'confirm-summary': 5,
-      'generate-pitch': 6,
-      'practice-pitch': 7,
-      'evaluation': 8,
+      'ai-intro': 2, // 保留以備不時之需
+      'free-description': 2,
+      'qa-improve': 3,
+      'confirm-summary': 4,
+      'generate-pitch': 5,
+      'practice-pitch': 6,
+      'evaluation': 7,
       'keywords': 8,
     }
     return stepMap[currentStage]
@@ -763,8 +757,8 @@ export default function Home() {
         </div>
                   <button className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/10 flex items-center justify-center">
                     <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-black" />
-                  </button>
-                </div>
+                </button>
+              </div>
               </div>
             )}
 
@@ -813,8 +807,8 @@ export default function Home() {
                             />
                           )
                         })}
-                      </div>
-                    </div>
+                </div>
+            </div>
 
                     {/* Features */}
                     <div className="space-y-6">
@@ -870,7 +864,7 @@ export default function Home() {
                   >
                     START
                   </motion.button>
-                </div>
+                    </div>
               )}
 
               {/* Upload Step */}
@@ -886,7 +880,7 @@ export default function Home() {
                           className="w-full aspect-square object-cover rounded-2xl"
                         />
               ))}
-            </div>
+                    </div>
           )}
 
                   <div className="flex-1 flex items-center justify-center">
@@ -915,12 +909,11 @@ export default function Home() {
                       Start Practice
                     </button>
                   )}
-                </div>
+                        </div>
               )}
 
               {/* Recording Steps */}
-              {(currentStage === 'ai-intro' ||
-                currentStage === 'free-description' ||
+              {(currentStage === 'free-description' ||
                 currentStage === 'qa-improve' ||
                 currentStage === 'practice-pitch') && (
                 <div className="flex-1 flex flex-col items-center justify-between">
@@ -932,23 +925,7 @@ export default function Home() {
 
                       {/* Dot pattern */}
                       <div className="absolute inset-0 flex items-center justify-center">
-                        {currentStage === 'ai-intro' && isSpeaking ? (
-                          <div className="text-center">
-                            <motion.div
-                              className="text-4xl md:text-5xl lg:text-6xl text-black uppercase tracking-wider"
-                              animate={{
-                                opacity: [0.4, 1, 0.4],
-                              }}
-                              transition={{
-                                duration: 1.5,
-                                repeat: Infinity,
-                              }}
-                            >
-                              AI
-                            </motion.div>
-                            <p className="text-sm md:text-base text-black/60 mt-2">SPEAKING</p>
-                          </div>
-                        ) : isProcessing ? (
+                        {isProcessing ? (
                           <div className="text-center">
                             <motion.div
                               className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
@@ -956,7 +933,7 @@ export default function Home() {
                               transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
                             />
                             <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Processing</p>
-                          </div>
+                            </div>
                         ) : (
                           <div className="grid grid-cols-8 gap-2">
                             {Array.from({ length: 64 }).map((_, i) => {
@@ -986,56 +963,51 @@ export default function Home() {
                                 <div key={i} className="w-2 h-2" />
                               )
                             })}
-                          </div>
+                            </div>
                         )}
-                      </div>
-                    </div>
-                  </div>
+                          </div>
+                            </div>
+                          </div>
 
                   {/* Timer */}
                   <div className="text-center mb-4">
                     <div className="text-4xl md:text-5xl lg:text-6xl text-black">
                       {formatTime(recordingTime)}
-                    </div>
+                            </div>
                     {isRecording && (
                       <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
                         Recording
-                      </div>
+                            </div>
                     )}
                     {isProcessing && (
                       <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
                         Listening
                     </div>
                     )}
-                    {currentStage === 'ai-intro' && isSpeaking && (
-                      <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
-                        AI Speaking
-                      </div>
-                    )}
-                  </div>
+                          </div>
 
                   {/* Subtitle Area */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">
                     <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
                       {currentSubtitle || userTranscript || "Tap to start speaking..."}
                     </p>
-                  </div>
+                        </div>
 
                   {/* Action Buttons */}
                   <div className="w-full flex flex-col items-center gap-3">
                     <button
                       onClick={
-                        currentStage === 'ai-intro' || isProcessing
+                        isProcessing
                           ? undefined
                           : isRecording
                           ? stopRecording
                           : startRecording
                       }
-                      disabled={currentStage === 'ai-intro' || isProcessing}
+                      disabled={isProcessing}
                       className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all ${
                         isRecording
                           ? 'bg-black text-white'
-                          : (currentStage === 'ai-intro' || isProcessing)
+                          : isProcessing
                             ? 'bg-black/20 text-black/40 cursor-not-allowed'
                             : 'bg-black text-white hover:scale-105'
                       }`}
@@ -1043,28 +1015,15 @@ export default function Home() {
                       <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/20"></div>
                     </button>
 
-                    {/* Skip button for AI Intro */}
-                    {currentStage === 'ai-intro' && (
-                    <button
-                        onClick={() => {
-                          setIsSpeaking(false)
-                          setCurrentStage('free-description')
-                          setCurrentSubtitle('')
-                        }}
-                        className="text-black/60 text-sm md:text-base underline hover:text-black"
-                      >
-                        Skip & Continue
-                    </button>
-                    )}
-                    {currentStage !== 'ai-intro' && !isProcessing && (
+                    {!isProcessing && (
                         <div className="text-xs md:text-sm text-black/50 text-center uppercase tracking-wide">
                           <p>Microphone permission needed</p>
                           <p>Tap button to enable</p>
+                  </div>
+                )}
                         </div>
-                    )}
-                        </div>
-                      </div>
-              )}
+                  </div>
+                )}
 
               {/* Confirm Focus Step */}
               {currentStage === 'confirm-summary' && (
@@ -1073,34 +1032,34 @@ export default function Home() {
                     <div className="text-center space-y-6">
                       <div className="w-24 h-24 md:w-32 md:h-32 mx-auto border-4 border-black rounded-full flex items-center justify-center">
                         <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full"></div>
-                            </div>
+                    </div>
                           <div>
                         <p className="text-sm md:text-base text-black/60 uppercase tracking-wide mb-2">READY</p>
                         <p className="text-3xl md:text-4xl lg:text-5xl text-black uppercase tracking-tight leading-tight">
                           GENERATE<br />3-MINUTE<br />PITCH
-                        </p>
-                            </div>
-                            </div>
-                          </div>
+                    </p>
+                  </div>
+              </div>
+        </div>
 
                   <div className="flex space-x-4 justify-center">
-                    <button
+              <button
                       onClick={() => handleConfirmStageButton('redescribe')}
                       disabled={isProcessing || isSpeaking}
                       className="px-6 py-3 md:px-8 md:py-4 bg-black/10 text-black rounded-full text-sm md:text-base uppercase tracking-wide"
-                    >
+              >
                       Redescribe
-                    </button>
-                    <button
+              </button>
+                <button
                       onClick={() => handleConfirmStageButton('confirm')}
                       disabled={isProcessing || isSpeaking}
                       className="px-6 py-3 md:px-8 md:py-4 bg-black text-white rounded-full text-sm md:text-base uppercase tracking-wide"
-                    >
+                >
                       Generate
-                    </button>
-                            </div>
-                            </div>
-              )}
+                </button>
+            </div>
+          </div>
+        )}
 
               {/* Generate Pitch Step */}
               {currentStage === 'generate-pitch' && (
@@ -1109,7 +1068,7 @@ export default function Home() {
                     <div className="text-center space-y-6">
                       <div className="w-24 h-24 md:w-32 md:h-32 mx-auto border-4 border-black rounded-full flex items-center justify-center">
                         <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full"></div>
-                      </div>
+              </div>
                           <div>
                         <p className="text-sm md:text-base text-black/60 uppercase tracking-wide mb-2">GENERATED</p>
                         <p className="text-3xl md:text-4xl lg:text-5xl text-black uppercase tracking-tight leading-tight">
@@ -1126,9 +1085,9 @@ export default function Home() {
                     >
                     Start Practice
                     </button>
-                </div>
-              )}
-
+              </div>
+            )}
+            
               {/* View Scores Step */}
               {currentStage === 'evaluation' && evaluationScores && (
                 <div className="flex-1 flex flex-col justify-between">
@@ -1136,7 +1095,7 @@ export default function Home() {
                     <div className="text-center">
                       <div className="text-8xl md:text-9xl lg:text-[12rem] text-black mb-4">
                         {evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement}
-                    </div>
+              </div>
                       <div className="w-48 md:w-64 lg:w-80 h-2 md:h-3 bg-black/20 rounded-full mx-auto overflow-hidden">
                         <motion.div
                           className="h-full bg-black"
@@ -1149,12 +1108,12 @@ export default function Home() {
                             delay: 0.5,
                           }}
                         />
-                      </div>
+          </div>
                       <p className="mt-4 text-black/60 text-sm md:text-base">
                         Great work!
                     </p>
-                  </div>
-                  </div>
+        </div>
+            </div>
 
                   <button
                     onClick={handleStageButton}
@@ -1174,39 +1133,39 @@ export default function Home() {
                         <p className="text-sm md:text-base text-black whitespace-pre-wrap">
                           {messages[messages.length - 1].content}
                         </p>
-                      </div>
-                    )}
-                  </div>
+            </div>
+          )}
+        </div>
 
                   <div className="grid grid-cols-2 gap-3 mt-4">
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
                         setPendingAudioUrl('')
                         setPendingAudioText('✅ 已複製到剪貼簿！')
                         setShowAudioModal(true)
-                      }}
+                }}
                       className="py-3 md:py-4 bg-black/10 text-black rounded-full uppercase tracking-wide text-sm md:text-base"
-                    >
+              >
                       Copy
-                    </button>
-                    <button
-                      onClick={() => {
-                        setCurrentStage('practice-pitch')
-                      }}
-                      disabled={isProcessing || isSpeaking}
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentStage('practice-pitch')
+                }}
+                disabled={isProcessing || isSpeaking}
                       className="py-3 md:py-4 bg-black text-white rounded-full uppercase tracking-wide text-sm md:text-base"
                     >
                       Practice
-                    </button>
-                  </div>
-                </div>
-              )}
+              </button>
+            </div>
+          </div>
+        )}
 
               </div>
           </motion.div>
         </AnimatePresence>
-      </div>
+            </div>
 
       {/* 音頻播放確認模態對話框 */}
       {showAudioModal && (
@@ -1228,8 +1187,8 @@ export default function Home() {
               </p>
               
               <div className="flex space-x-4 justify-center">
-                <button
-                  onClick={() => {
+              <button
+                onClick={() => {
                     setShowAudioModal(false)
                     setPendingAudioUrl(null)
                     setPendingAudioText('')
@@ -1245,17 +1204,17 @@ export default function Home() {
                   className="px-6 py-3 md:px-8 md:py-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm md:text-base"
                 >
                   取消 / Cancel
-                </button>
-                <button
+              </button>
+              <button
                   onClick={confirmAudioPlay}
                   className="px-6 py-3 md:px-8 md:py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm md:text-base"
                 >
                   確定 / OK
-                </button>
+              </button>
+            </div>
               </div>
             </div>
-          </div>
-        </div>
+              </div>
       )}
     </>
   )

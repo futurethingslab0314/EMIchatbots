@@ -23,8 +23,8 @@ const STAGE_PROMPTS: Record<ConversationStage, string> = {
 
 // 階段轉換邏輯
 const STAGE_TRANSITIONS: Record<ConversationStage, ConversationStage> = {
-  'upload': 'ai-intro',
-  'ai-intro': 'free-description', // AI 介紹完成後進入自由描述階段
+  'upload': 'free-description', // 上傳後直接進入自由描述階段
+  'ai-intro': 'free-description', // 保留以備不時之需
   'free-description': 'free-description', // 保持自由描述階段，直到錄音完成
   'qa-improve': 'confirm-summary',
   'confirm-summary': 'generate-pitch',
@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
         throw new Error(`未定義的階段 prompt: ${currentStage}`)
       }
 
-      // 只有在 ai-intro 階段需要傳送圖片（讓 AI 看到作品）
-      const shouldSendImages = currentStage === 'ai-intro'
+      // 在 free-description 階段需要傳送圖片（讓 AI 看到作品）
+      const shouldSendImages = currentStage === 'free-description'
 
       const reply = await sendMessageSimple(
         messages,
@@ -138,9 +138,9 @@ export async function POST(request: NextRequest) {
       contextPrompt = `學生正在練習剛才生成的 pitch。他們說的內容是：「${userText}」\n\n參考 pitch 稿：\n${generatedPitch}\n\n請在他們練習完後，準備進行評分。`
     }
 
-    // 只有在 ai-intro 階段需要圖片（首次介紹時讓 AI 看到作品）
+    // 在 free-description 階段需要圖片（讓 AI 看到作品）
     // 其他階段專注於語言表達，不需要圖片
-    const shouldSendImages = currentStage === 'ai-intro'
+    const shouldSendImages = currentStage === 'free-description'
 
     const assistantReply = await sendMessageSimple(
       messages,
@@ -167,10 +167,7 @@ export async function POST(request: NextRequest) {
     let nextStage: ConversationStage | undefined
 
     // 根據回應內容判斷是否該進入下一階段
-    if (currentStage === 'ai-intro') {
-      // AI 介紹完成後，轉到自由描述階段
-      nextStage = 'free-description'
-    } else if (currentStage === 'free-description') {
+    if (currentStage === 'free-description') {
       // 學生錄音完成後，直接轉到 qa-improve 階段
       // AI 會在這個階段提出問題
       nextStage = 'qa-improve'
