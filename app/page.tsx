@@ -1177,58 +1177,92 @@ export default function Home() {
             
               {/* View Scores Step */}
               {currentStage === 'evaluation' && evaluationScores && (
-                <div className="flex-1 flex flex-col justify-between">
-                  <div className="flex-1 flex flex-col items-center justify-center space-y-6">
-                    <div className="text-center">
-                      <div className="text-8xl md:text-9xl lg:text-[12rem] text-black mb-4">
-                        {evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement}
-              </div>
-                      <div className="w-48 md:w-64 lg:w-80 h-2 md:h-3 bg-black/20 rounded-full mx-auto overflow-hidden">
-                        <motion.div
-                          className="h-full bg-black"
-                          initial={{ width: 0 }}
-                          animate={{
-                            width: `${((evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement) / 100) * 100}%`,
-                          }}
-                          transition={{
-                            duration: 1,
-                            delay: 0.5,
-                          }}
-                        />
-          </div>
-                      <p className="mt-4 text-black/60 text-sm md:text-base">
-                        Great work!
+                <div className="flex-1 flex flex-col justify-between pb-4">
+                  {/* 1️⃣ 頂部總分 */}
+                  <div className="text-center py-6">
+                    <div className="text-7xl md:text-8xl text-black mb-2">
+                      {evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement}
+                    </div>
+                    <p className="text-sm text-black/50 uppercase tracking-widest">
+                      Total Score
                     </p>
-        </div>
+                  </div>
 
-                    {/* Subtitle Area */}
-                    <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6">
-                      <div className="space-y-2">
-                        {/* 當前字幕 - 放在最上面 */}
-                        <div>
-                          <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
-                            {currentSubtitle || "查看您的評分結果和改進建議..."}
-                  </p>
-                </div>
-                        {/* 對話歷史 - 只顯示最近一句話 */}
-                        {subtitleHistory.length > 0 && (
-                          <div className="border-t border-black/20 pt-2">
-                            <p className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
-                              {subtitleHistory[subtitleHistory.length - 1]}
-                            </p>
-            </div>
-          )}
+                  {/* 2️⃣ 五個維度的分數卡片 */}
+                  <div className="flex-1 overflow-y-auto space-y-4 px-2">
+                    {[
+                      { key: 'originality', label: 'Originality', score: evaluationScores.originality },
+                      { key: 'pronunciation', label: 'Pronunciation', score: evaluationScores.pronunciation },
+                      { key: 'engagingTone', label: 'Engaging Tone', score: evaluationScores.engagingTone },
+                      { key: 'contentDelivery', label: 'Content Delivery', score: evaluationScores.contentDelivery },
+                      { key: 'timeManagement', label: 'Time Management', score: evaluationScores.timeManagement },
+                    ].map((item, idx) => (
+                      <motion.div
+                        key={item.key}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        className="bg-black/5 rounded-3xl p-6 flex items-center justify-between"
+                      >
+                        {/* 左側：標籤 + 進度條 */}
+                        <div className="flex-1">
+                          <p className="text-xs text-black/50 uppercase tracking-widest mb-1">
+                            {item.label}
+                          </p>
+                          <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
+                            <motion.div
+                              className="h-full bg-black"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${(item.score / 20) * 100}%` }}
+                              transition={{ duration: 0.8, delay: idx * 0.1 + 0.3 }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* 右側：大號分數 */}
+                        <div className="ml-6 text-right">
+                          <motion.div
+                            className="text-5xl text-black"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: idx * 0.1 + 0.2, type: "spring" }}
+                          >
+                            {item.score}
+                          </motion.div>
+                          <p className="text-xs text-black/40">/20</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* 3️⃣ 字幕區域 */}
+                  <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mt-4">
+                    <div className="space-y-2">
+                      {/* 當前字幕 - 放在最上面 */}
+                      <div>
+                        <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
+                          {currentSubtitle || "查看您的評分結果和改進建議..."}
+                        </p>
                       </div>
-        </div>
-            </div>
+                      {/* 對話歷史 - 只顯示最近一句話 */}
+                      {subtitleHistory.length > 0 && (
+                        <div className="border-t border-black/20 pt-2">
+                          <p className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
+                            {subtitleHistory[subtitleHistory.length - 1]}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
+                  {/* 4️⃣ 底部按鈕 */}
                   <button
                     onClick={handleStageButton}
-                    className="w-full py-4 md:py-5 bg-black text-white rounded-full text-lg md:text-xl uppercase tracking-wide"
+                    className="w-full py-4 mt-4 bg-black text-white rounded-full text-lg uppercase tracking-wide"
                   >
                     Generate Pitch Cheat Sheet
                   </button>
-                  </div>
+                </div>
                 )}
 
               {/* View Notes Step */}
