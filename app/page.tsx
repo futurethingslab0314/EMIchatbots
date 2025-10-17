@@ -975,7 +975,7 @@ export default function Home() {
                               01
                             </p>
                             <p className="text-white text-sm md:text-base">
-                              Upload Design Work
+                              Upload Design Work 上傳作品照片
                             </p>
                           </div>
                         </div>
@@ -989,7 +989,7 @@ export default function Home() {
                               02
                             </p>
                             <p className="text-white text-sm md:text-base">
-                              Practice with AI Coach
+                              Practice with AI Coach 與 AI Coach 練習 Pitch
                             </p>
                           </div>
                         </div>
@@ -1003,7 +1003,7 @@ export default function Home() {
                               03
                             </p>
                             <p className="text-white text-sm md:text-base">
-                              Generate Pitch Notes
+                              Generate Pitch Notes 生成 Pitch 小抄
                             </p>
                           </div>
                         </div>
@@ -1170,7 +1170,7 @@ export default function Home() {
                     )}
                     {isProcessing && (
                       <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
-                        Listening
+                        
                     </div>
                     )}
                     {currentStage === 'free-description' && isSpeaking && (

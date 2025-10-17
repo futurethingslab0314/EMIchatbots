@@ -110,8 +110,8 @@ export async function POST(request: NextRequest) {
       const audioBase64 = audioBuffer.toString('base64')
       const audioUrl = `data:audio/mp3;base64,${audioBase64}`
 
-      // 判斷下一個階段
-      const nextStage = STAGE_TRANSITIONS[currentStage]
+      // triggerStage 時不要轉換階段，保持在當前階段
+      const nextStage = undefined
 
       // 如果是生成 pitch 階段，提取 pitch 內容
       let pitchContent = ''
