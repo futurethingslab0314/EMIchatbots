@@ -1017,22 +1017,20 @@ export default function Home() {
                   {/* Subtitle Area */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">
                     <div className="space-y-2">
-                      {/* 對話歷史 */}
-                      {subtitleHistory.length > 0 && (
-                        <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {subtitleHistory.slice(-3).map((text, index) => (
-                            <p key={index} className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
-                              {text}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                      {/* 當前字幕 */}
-                      <div className="border-t border-black/20 pt-2">
+                      {/* 當前字幕 - 放在最上面 */}
+                      <div>
                         <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
                           {currentSubtitle || userTranscript || "Tap to start speaking..."}
                         </p>
                       </div>
+                      {/* 對話歷史 - 只顯示最近一句話 */}
+                      {subtitleHistory.length > 0 && (
+                        <div className="border-t border-black/20 pt-2">
+                          <p className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
+                            {subtitleHistory[subtitleHistory.length - 1]}
+                          </p>
+                        </div>
+                      )}
                     </div>
                         </div>
 
@@ -1088,22 +1086,20 @@ export default function Home() {
                   {/* Subtitle Area */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">
                     <div className="space-y-2">
-                      {/* 對話歷史 */}
-                      {subtitleHistory.length > 0 && (
-                        <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {subtitleHistory.slice(-3).map((text, index) => (
-                            <p key={index} className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
-                              {text}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                      {/* 當前字幕 */}
-                      <div className="border-t border-black/20 pt-2">
+                      {/* 當前字幕 - 放在最上面 */}
+                      <div>
                         <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
                           {currentSubtitle || "確認設計重點後，點擊 Generate 開始生成 3 分鐘 pitch..."}
                         </p>
                       </div>
+                      {/* 對話歷史 - 只顯示最近一句話 */}
+                      {subtitleHistory.length > 0 && (
+                        <div className="border-t border-black/20 pt-2">
+                          <p className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
+                            {subtitleHistory[subtitleHistory.length - 1]}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
