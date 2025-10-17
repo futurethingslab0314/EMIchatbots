@@ -943,7 +943,7 @@ export default function Home() {
                         {currentStage === 'free-description' && isSpeaking ? (
                           <div className="text-center">
                             {/* Audio Wave Bars */}
-                            <div className="flex items-center justify-center gap-2 mb-6">
+                            <div className="flex items-center justify-center gap-2 mb-6" style={{ height: '100px' }}>
                               {Array.from({ length: 7 }).map((_, i) => (
                                 <motion.div
                                   key={i}

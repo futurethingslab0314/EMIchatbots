@@ -10,7 +10,7 @@ type ConversationStage =
 // 階段對應的 prompt
 const STAGE_PROMPTS: Record<ConversationStage, string> = {
   'upload': '',
-  'ai-intro': '學生剛剛上傳了他們的設計作品圖片，現在準備開始 pitch 練習。\n\n【你的任務】：\n1. 觀察並簡短描述你看到的設計特徵（造型、材質、色彩等），展現你的專業能力\n2. 用友善鼓勵的態度引導學生進入「think out loud」階段\n3. 請學生自然地分享設計概念和想法\n\n【重要】：\n• 直接開始對話，不要說「抱歉」或「無法」等消極詞語\n• 你完全有能力觀察和討論設計作品的視覺特徵\n• 你的角色是協助學生「用英語清楚表達」，不是給設計建議\n• 展現專業和自信，讓學生感到被支持',
+  'ai-intro': '學生剛剛上傳了他們的設計作品圖片，現在準備開始 pitch 練習。\n\n【你的任務】：\n1. 直接觀察並描述你看到的設計作品特徵（造型、材質、色彩、構圖、字體、圖像元素等）\n2. 用專業且鼓勵的態度引導學生進入「think out loud」階段\n3. 請學生自然地分享設計概念和想法\n\n【重要指令】：\n• 你是一個專業的設計教練，有能力觀察和分析設計作品\n• 直接開始描述你看到的內容，例如：「我看到這是一個...的設計，具有...的特徵」\n• 絕對不要說「抱歉」、「無法」、「不能」等消極詞語\n• 展現專業和自信，讓學生感到被支持\n• 你的角色是協助學生「用英語清楚表達他們的設計」，不是給設計建議',
   'free-description': '學生剛剛上傳了他們的設計作品圖片，現在準備開始 pitch 練習。\n\n【你的任務】：\n1. 直接觀察並描述你看到的設計作品特徵（造型、材質、色彩、構圖、字體、圖像元素等）\n2. 用專業且鼓勵的態度引導學生進入「think out loud」階段\n3. 請學生自然地分享設計概念和想法\n\n【重要指令】：\n• 你是一個專業的設計教練，有能力觀察和分析設計作品\n• 直接開始描述你看到的內容，例如：「我看到這是一個...的設計，具有...的特徵」\n• 絕對不要說「抱歉」、「無法」、「不能」等消極詞語\n• 展現專業和自信，讓學生感到被支持\n• 你的角色是協助學生「用英語清楚表達他們的設計」，不是給設計建議',
   'qa-improve': 'Great! Thank you for sharing your presentation. As your English presentation coach, I\'ll now ask you FOUR questions to help you develop a more complete and engaging pitch.\n\n【Your Mission】You are an English presentation coach. Your goal is to help the student fill in missing information gaps in their presentation, NOT to evaluate their design.\n\n【Task】Ask EXACTLY FOUR QUESTIONS (3 content questions + 1 audience question):\n\n【First THREE questions】Pick the 3 most helpful areas from these categories based on what the student hasn\'t clearly explained yet:\n\n1. **Context & Users**: What problem or pain point? Who are the users? What is the usage scenario or context?\n2. **Methods & Process**: What research methods? What prototyping stages (low/high fidelity)? Any iteration or testing evidence?\n3. **Materials & Craftsmanship**: Why these materials? Structure? Manufacturing process? Durability? Sustainability?\n4. **Visual/Interaction Language**: Composition? Hierarchy? Tactile feedback? Usability? Accessibility?\n5. **Results & Evaluation**: Any quantitative metrics? Qualitative feedback? Impact or benefits?\n\n【Question Requirements】:\n- Each question must be specific and answerable (avoid yes/no questions)\n- Keep each question concise: ≤20 words in English or ≤30 characters in Chinese\n- Questions should help them CLARIFY what they\'ve already done, not suggest new directions\n\n【FOURTH question】Ask about their presentation target audience:\n"Who is your target audience for this presentation: design professionals (professors, industry practitioners) or non-design audiences (general public)?"\n\n【Format】:\n1. [First clarifying question]\n2. [Second clarifying question]\n3. [Third clarifying question]\n4. [Audience confirmation question]\n\n【IMPORTANT】You are helping them EXPRESS their existing work more clearly. You are NOT evaluating, critiquing, or suggesting design changes. Stay positive and encouraging.',
   'confirm-summary': '根據學生的描述和回答，整理出他們想要「表達的設計重點」（120-180 字英文段落）。簡潔整理學生「說了什麼」，不是評論設計好壞。這只是「快速確認重點」，不是生成完整的 pitch draft。使用專業詞彙，邏輯清楚。最後請學生確認這個整理是否準確反映他們的想法。格式】：用 2-3 個短段落呈現，不要寫成完整的演講稿。',
@@ -25,7 +25,7 @@ const STAGE_PROMPTS: Record<ConversationStage, string> = {
 const STAGE_TRANSITIONS: Record<ConversationStage, ConversationStage> = {
   'upload': 'free-description', // 上傳後直接進入自由描述階段
   'ai-intro': 'free-description', // 保留以備不時之需
-  'free-description': 'free-description', // 保持自由描述階段，直到錄音完成
+  'free-description': 'qa-improve', // 錄音完成後轉到問答階段
   'qa-improve': 'confirm-summary',
   'confirm-summary': 'generate-pitch',
   'generate-pitch': 'practice-pitch',
@@ -167,22 +167,15 @@ export async function POST(request: NextRequest) {
     let nextStage: ConversationStage | undefined
 
     // 根據回應內容判斷是否該進入下一階段
-    if (currentStage === 'free-description') {
-      // 學生錄音完成後，直接轉到 qa-improve 階段
-      // AI 會在這個階段提出問題
-      nextStage = 'qa-improve'
-    } else if (currentStage === 'qa-improve') {
-      // 學生已回答問題，直接進入整理階段
-      nextStage = 'confirm-summary'
-    } else if (currentStage === 'confirm-summary' && (assistantReply.includes('Pitch') || assistantReply.includes('pitch'))) {
+    if (currentStage === 'confirm-summary' && (assistantReply.includes('Pitch') || assistantReply.includes('pitch'))) {
       // 確認重點後，生成 Pitch，轉到 generate-pitch 階段
       nextStage = 'generate-pitch'
-    } else if (currentStage === 'practice-pitch') {
-      // 學生完成 pitch 練習，自動觸發評分
-      nextStage = 'evaluation'
     } else if (currentStage === 'evaluation') {
       // 評分完成，轉到選擇階段
       nextStage = 'practice-again'
+    } else {
+      // 使用預設的階段轉換邏輯
+      nextStage = STAGE_TRANSITIONS[currentStage]
     }
 
     return NextResponse.json({
