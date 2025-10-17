@@ -304,6 +304,16 @@ export default function Home() {
       // 更新階段
       if (nextStage) {
         setCurrentStageWithLanguage(nextStage)
+        
+        // 只有特定階段轉換才自動觸發 AI 回應
+        if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
+            (currentStage === 'qa-improve' && nextStage === 'confirm-summary') ||
+            (currentStage === 'confirm-summary' && nextStage === 'generate-pitch')) {
+          setTimeout(async () => {
+            // 使用 nextStage 作為觸發的階段，而不是 currentStage
+            await triggerStageAction(nextStage)
+          }, 500) // 稍微延遲，確保狀態更新完成
+        }
       }
 
       // 儲存生成的 pitch
@@ -550,7 +560,8 @@ export default function Home() {
         
         // 只有特定階段轉換才自動觸發 AI 回應
         if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
-            (currentStage === 'qa-improve' && nextStage === 'confirm-summary')) {
+            (currentStage === 'qa-improve' && nextStage === 'confirm-summary') ||
+            (currentStage === 'confirm-summary' && nextStage === 'generate-pitch')) {
           setTimeout(async () => {
             // 使用 nextStage 作為觸發的階段，而不是 currentStage
             await triggerStageAction(nextStage)
@@ -635,8 +646,8 @@ export default function Home() {
         break
       
       case 'confirm-summary':
-        // 確認生成 3 mins pitch
-        await triggerStageAction('generate-pitch')
+        // 開始確認重點 → 啟動錄音
+        startRecording()
         break
       
       case 'generate-pitch':

@@ -5,7 +5,7 @@ import OpenAI from 'openai'
 // 定義對話階段
 type ConversationStage = 
   | 'upload' | 'free-description' | 'qa-improve' 
-  | 'confirm-summary' | 'generate-pitch' | 'practice-pitch' | 'practice-again'
+  | 'confirm-summary' | 'generate-pitch' | 'practice-pitch'
   | 'evaluation' | 'keywords'
 
 // 階段對應的 prompt
@@ -16,7 +16,6 @@ const STAGE_PROMPTS: Record<ConversationStage, string> = {
   'confirm-summary': '【重要】你現在是設計重點整理師，不再是問問題的教練。\n\n根據學生在之前的對話中分享的設計內容，整理出他們想要「表達的設計重點」（120-180 字英文段落）。\n\n【任務】\n1. 簡潔整理學生「說了什麼」關於他們的設計\n2. 不是評論設計好壞，不是問問題\n3. 這只是「快速確認重點」，不是生成完整的 pitch draft\n4. 使用專業詞彙，邏輯清楚\n5. 最後請學生確認這個整理是否準確反映他們的想法\n\n【格式】用 2-3 個短段落呈現，不要寫成完整的演講稿。\n\n【重要】直接開始整理，不要問任何問題！',
   'generate-pitch': '根據學生確認的內容和目標聽眾，生成一個 200 words 以內的 3 分鐘英文 pitch 稿（一個段落）。\n\n【重點】這是協助學生「表達他們的設計」，不是重新設計或添加新想法。保持學生原本的設計概念和內容。\n\n結構建議：Hook → Background → Design Intent → Process → Materials & Rationale → Outcomes → Impact\n\n使用適合目標聽眾的語言。',
   'practice-pitch': '', // 學生練習 pitch，不需要特殊 prompt
-  'practice-again': '', // 練習完成後的選擇階段，由前端按鈕處理
   'evaluation': '【重要】你現在是口語表達評分師，請根據以下標準評分。\n\n學生剛才練習了 pitch 的口語表達。請根據以下「發表技巧 rubric」評分（每項 20 分，總分 100）：\n\n1. **Originality**（原創性）：是否保持學生原本的設計概念和內容，含有多少%的AI生成內容 ([分數]/20) \n2.**Pronunciation**（發音清晰度）：英語發音是否清楚、專業術語是否正確 ([分數]/20)\n3. **Engaging Tone**（表達吸引力）：是否有抑揚頓挫、重點是否有停頓、語氣是否吸引人 ([分數]/20)\n4. **Content Delivery**（內容表達）：邏輯是否清楚、資訊是否完整、重點是否突出 ([分數]/20)\n5. **Time Management**（時間掌控）：是否在 3 分鐘內、節奏是否適當 ([分數]/20)\n\n【重要輸出格式】請務必在回應中包含以下格式的評分（以便系統自動生成圖表）：\nOriginality: [分數]/20\nPronunciation: [分數]/20\nEngaging Tone: [分數]/20\nContent Delivery: [分數]/20\nTime Management: [分數]/20\n\n然後再給予具體的改進建議。評分重點是「口語表達技巧」，不是設計本身。保持正向鼓勵。',
   'keywords': '根據剛才生成的 Pitch 內容，為學生製作一份實用的發表小抄筆記。\n\n【任務】基於實際的 Pitch 內容，提供發表時的小抄，包含：\n\n1. **核心重點句子**（3-5 個關鍵句子，中英對照）\n   - 從 Pitch 中提取最重要的表達句\n   - 提供中英文對照，方便記憶\n\n2. **關鍵詞彙**（設計專業術語，中英對照）\n   - 從 Pitch 中提取的專業設計詞彙\n   - 提供簡短定義或解釋\n\n3. **轉折連接詞**（避免忘詞的英文句子）\n   - 開場轉折：「First, let me introduce...」「To begin with...」\n   - 過程轉折：「Moving on to...」「Furthermore...」「Additionally...」\n   - 結尾轉折：「In conclusion...」「To summarize...」「Finally...」\n\n4. **記憶提示**（數字、重點提醒）\n   - 重要的數據或特徵\n   - 容易忘記的關鍵點\n\n【格式要求】\n- 簡潔明瞭，適合手機螢幕瀏覽\n- 中英對照，方便快速參考\n- 按發表順序排列\n- 重點突出，一目了然\n\n【重要】這是基於實際 Pitch 內容的實用小抄，不是評價摘要！',
 }
@@ -29,7 +28,6 @@ const STAGE_TRANSITIONS: Record<ConversationStage, ConversationStage> = {
   'confirm-summary': 'generate-pitch',
   'generate-pitch': 'practice-pitch',
   'practice-pitch': 'evaluation', // 練習完成後自動進入評分階段
-  'practice-again': 'practice-again', // 保持選擇階段
   'evaluation': 'evaluation', // 保持在 evaluation 階段，等待用戶點擊生成小抄
   'keywords': 'keywords', // 最終階段
 }
@@ -200,12 +198,12 @@ export async function POST(request: NextRequest) {
     } else if (currentStage === 'qa-improve' && userText && userText.trim().length > 0) {
       // 用戶在 qa-improve 階段錄音完成後，轉到 confirm-summary 階段
       nextStage = 'confirm-summary'
-    } else if (currentStage === 'confirm-summary' && (assistantReply.includes('Pitch') || assistantReply.includes('pitch'))) {
-      // 確認重點後，生成 Pitch，轉到 generate-pitch 階段
+    } else if (currentStage === 'confirm-summary' && userText && userText.trim().length > 0) {
+      // 用戶在 confirm-summary 階段錄音完成後，轉到 generate-pitch 階段
       nextStage = 'generate-pitch'
     } else if (currentStage === 'evaluation') {
-      // 評分完成，轉到選擇階段
-      nextStage = 'practice-again'
+      // 評分完成，轉到關鍵字階段
+      nextStage = 'keywords'
     } else {
       // 使用預設的階段轉換邏輯
       nextStage = STAGE_TRANSITIONS[currentStage]
