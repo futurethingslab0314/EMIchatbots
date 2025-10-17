@@ -23,6 +23,19 @@ type ConversationStage =
   | 'evaluation'       // Bot 評分
   | 'keywords'         // 生成關鍵字筆記
 
+// 各階段對應的錄音語言設定
+const STAGE_LANGUAGES: Record<ConversationStage, string> = {
+  'home': 'zh-TW',           // 首頁 - 繁體中文
+  'upload': 'zh-TW',         // 上傳作品 - 繁體中文
+  'free-description': 'zh-TW', // 自由描述 - 繁體中文（讓學生用中文思考）
+  'qa-improve': 'zh-TW',     // Q&A 改進 - 繁體中文（讓學生用中文思考）
+  'confirm-summary': 'zh-TW', // 確認重點 - 繁體中文
+  'generate-pitch': 'en-US', // 生成 Pitch - 英文（準備英語 pitch）
+  'practice-pitch': 'en-US', // 練習 Pitch - 英文（實際英語練習）
+  'evaluation': 'en-US',     // 評分 - 英文（英語表達評估）
+  'keywords': 'zh-TW',       // 關鍵字筆記 - 繁體中文（方便理解）
+}
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isRecording, setIsRecording] = useState(false)
@@ -63,6 +76,21 @@ export default function Home() {
   // 音訊權限狀態
   const [audioPermissionsGranted, setAudioPermissionsGranted] = useState(false)
   const [isRequestingPermissions, setIsRequestingPermissions] = useState(false)
+
+  // 更新錄音語言設定
+  const updateRecognitionLanguage = (stage: ConversationStage) => {
+    if (recognitionRef.current) {
+      const newLanguage = STAGE_LANGUAGES[stage]
+      recognitionRef.current.lang = newLanguage
+      console.log(`🌐 錄音語言已切換為: ${newLanguage} (階段: ${stage})`)
+    }
+  }
+
+  // 包裝的階段設定函數，自動更新語言
+  const setCurrentStageWithLanguage = (stage: ConversationStage) => {
+    setCurrentStage(stage)
+    updateRecognitionLanguage(stage)
+  }
 
   // 預先請求音訊權限
   const requestAudioPermissions = async () => {
@@ -138,7 +166,8 @@ export default function Home() {
       recognitionRef.current = new SpeechRecognition()
       recognitionRef.current.continuous = true
       recognitionRef.current.interimResults = true
-      recognitionRef.current.lang = 'zh-TW'
+      // 語言設定將根據階段動態更新
+      recognitionRef.current.lang = STAGE_LANGUAGES[currentStage]
 
       recognitionRef.current.onresult = (event: any) => {
         let interimTranscript = ''
@@ -274,7 +303,7 @@ export default function Home() {
 
       // 更新階段
       if (nextStage) {
-        setCurrentStage(nextStage)
+        setCurrentStageWithLanguage(nextStage)
       }
 
       // 儲存生成的 pitch
@@ -517,7 +546,7 @@ export default function Home() {
 
       // 更新階段
       if (nextStage) {
-        setCurrentStage(nextStage)
+        setCurrentStageWithLanguage(nextStage)
         
         // 只有特定階段轉換才自動觸發 AI 回應
         if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
@@ -559,12 +588,12 @@ export default function Home() {
   const handleConfirmStageButton = async (action: 'confirm' | 'redescribe') => {
     if (action === 'confirm') {
       // 確認生成 3 mins pitch → 立刻進入 Step 6 (practice-pitch)
-      setCurrentStage('practice-pitch')
+      setCurrentStageWithLanguage('practice-pitch')
       // 觸發 AI 生成 pitch
       await triggerStageAction('generate-pitch')
     } else if (action === 'redescribe') {
       // 重新描述作品，回到 qa-improve 階段但不觸發 AI 回應，讓用戶可以錄音
-      setCurrentStage('qa-improve')
+      setCurrentStageWithLanguage('qa-improve')
       // 清除當前錄音狀態，但保留歷史字幕
       setUserTranscript('')
       setCurrentSubtitle('')
@@ -578,7 +607,7 @@ export default function Home() {
       case 'home':
         // 從首頁進入上傳階段，同時請求音訊權限
         await requestAudioPermissions()
-        setCurrentStage('upload')
+        setCurrentStageWithLanguage('upload')
         break
       
       case 'upload':
@@ -589,7 +618,7 @@ export default function Home() {
           setShowAudioModal(true)
           return
         }
-        setCurrentStage('free-description')
+        setCurrentStageWithLanguage('free-description')
         // 自動觸發 AI 引導用戶進行 Free Share
         await triggerStageAction('free-description')
         break
@@ -613,7 +642,7 @@ export default function Home() {
       case 'generate-pitch':
         // 這個階段現在不會被直接調用，因為會直接進入 practice-pitch
         // 保留這個 case 以防萬一
-        setCurrentStage('practice-pitch')
+        setCurrentStageWithLanguage('practice-pitch')
         break
       
       case 'practice-pitch':
@@ -629,7 +658,7 @@ export default function Home() {
       
       case 'keywords':
         // 重新開始 - 重置所有狀態
-        setCurrentStage('home')
+        setCurrentStageWithLanguage('home')
         setMessages([])
         setGeneratedPitch('')
         setEvaluationScores(null)
@@ -1435,7 +1464,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => {
-                  setCurrentStage('practice-pitch')
+                  setCurrentStageWithLanguage('practice-pitch')
                 }}
                 disabled={isProcessing || isSpeaking}
                       className="py-3 md:py-4 bg-black text-white rounded-full uppercase tracking-wide text-sm md:text-base"
