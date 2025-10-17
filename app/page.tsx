@@ -276,6 +276,13 @@ export default function Home() {
       // 更新階段
       if (nextStage) {
         setCurrentStage(nextStage)
+        
+        // 如果轉換到 qa-improve 階段，立即觸發 AI 回應來顯示四個問題
+        if (nextStage === 'qa-improve') {
+          setTimeout(async () => {
+            await triggerStageAction('qa-improve')
+          }, 500) // 稍微延遲，確保狀態更新完成
+        }
       }
 
       // 儲存生成的 pitch
