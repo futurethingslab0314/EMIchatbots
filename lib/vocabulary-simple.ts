@@ -210,6 +210,10 @@ export async function sendMessageSimple(
   // 調試信息
   console.log(`🎯 [${stage}] 發送給 AI 的 prompt:`, userMessage.substring(0, 100) + '...')
   console.log(`📝 [${stage}] 最終 messages 數量:`, chatMessages.length)
+  console.log(`🔍 [${stage}] 歷史 messages 數量:`, messages.length)
+  if (messages.length > 0) {
+    console.log(`📋 [${stage}] 最後一條歷史訊息:`, messages[messages.length - 1]?.content?.substring(0, 50) + '...')
+  }
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o', // gpt-4o 支援 vision
