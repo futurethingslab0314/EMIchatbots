@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
+import { motion, AnimatePresence } from 'motion/react'
+import { Camera, Image as ImageIcon, Mic, MicOff, Volume2, ChevronRight } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant' | 'system'
@@ -11,8 +13,10 @@ interface Message {
 
 // 對話階段定義
 type ConversationStage = 
+  | 'home'             // 首頁/歡迎頁面
   | 'upload'           // 上傳照片階段
-  | 'intro'            // Bot 介紹並鼓勵
+  | 'ai-intro'         // AI 教練介紹
+  | 'free-description' // 自由描述作品
   | 'qa-improve'       // Bot 追問細節
   | 'confirm-summary'  // 確認設計重點
   | 'generate-pitch'   // 生成 3 分鐘 pitch
@@ -28,7 +32,9 @@ export default function Home() {
   const [currentSubtitle, setCurrentSubtitle] = useState('')
   const [userTranscript, setUserTranscript] = useState('')
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
-  const [currentStage, setCurrentStage] = useState<ConversationStage>('upload')
+  const [currentStage, setCurrentStage] = useState<ConversationStage>('home')
+  const [recordingTime, setRecordingTime] = useState(0)
+  const [audioLevel, setAudioLevel] = useState(0)
   const [threadId, setThreadId] = useState<string | null>(null)
   const [showCamera, setShowCamera] = useState(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
@@ -47,6 +53,7 @@ export default function Home() {
   const audioContextRef = useRef<AudioContext | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   const [showAudioModal, setShowAudioModal] = useState(false)
   const [pendingAudioUrl, setPendingAudioUrl] = useState<string | null>(null)
@@ -83,6 +90,21 @@ export default function Home() {
       }
     }
   }, [])
+
+  // 錄音計時器
+  useEffect(() => {
+    if (isRecording) {
+      const timer = setInterval(() => {
+        setRecordingTime((prev) => prev + 1)
+        // 模擬音頻等級動畫
+        setAudioLevel(Math.random() * 0.8 + 0.2)
+      }, 100)
+      return () => clearInterval(timer)
+    } else {
+      setRecordingTime(0)
+      setAudioLevel(0)
+    }
+  }, [isRecording])
 
   // 開始錄音
   const startRecording = async () => {
@@ -333,7 +355,7 @@ export default function Home() {
   }
 
   // 觸發不同階段的 Bot 回應
-  const triggerStageAction = async (stage: ConversationStage, userInput?: string) => {
+  const triggerStageAction = async (stage: ConversationStage | 'intro', userInput?: string) => {
     setIsProcessing(true)
     
     try {
@@ -408,18 +430,29 @@ export default function Home() {
   // 階段按鈕處理
   const handleStageButton = async () => {
     switch (currentStage) {
+      case 'home':
+        // 從首頁進入上傳階段
+        setCurrentStage('upload')
+        break
+      
       case 'upload':
-        // 確認上傳作品 → Bot 介紹
+        // 確認上傳作品 → AI 介紹
         if (uploadedImages.length === 0) {
           setPendingAudioUrl('')
           setPendingAudioText('請至少上傳一張作品照片')
           setShowAudioModal(true)
           return
         }
-        await triggerStageAction('intro')
+        setCurrentStage('ai-intro')
+        await triggerStageAction('ai-intro')
         break
       
-      case 'intro':
+      case 'ai-intro':
+        // AI 介紹完成後進入自由描述階段
+        setCurrentStage('free-description')
+        break
+      
+      case 'free-description':
         // 開始自由描述作品 → 啟動錄音
         startRecording()
         break
@@ -453,7 +486,7 @@ export default function Home() {
       
       case 'keywords':
         // 重新開始 - 重置所有狀態
-        setCurrentStage('upload')
+        setCurrentStage('home')
         setMessages([])
         setGeneratedPitch('')
         setEvaluationScores(null)
@@ -463,6 +496,8 @@ export default function Home() {
         setIsRecording(false)
         setIsProcessing(false)
         setIsSpeaking(false)
+        setRecordingTime(0)
+        setAudioLevel(0)
         // 清除文件輸入
         const fileInput = document.getElementById('file-input') as HTMLInputElement
         if (fileInput) fileInput.value = ''
@@ -542,17 +577,78 @@ export default function Home() {
     }
   }, [cameraStream])
 
+  // 格式化時間
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  // 取得階段顏色
+  const getStepColor = () => {
+    const colorMap: Record<ConversationStage, string> = {
+      'home': 'from-black to-black',
+      'upload': 'from-slate-100 to-slate-200',
+      'ai-intro': 'from-blue-400 to-blue-500',
+      'free-description': 'from-orange-400 to-orange-500',
+      'qa-improve': 'from-yellow-400 to-yellow-500',
+      'confirm-summary': 'from-green-400 to-green-500',
+      'generate-pitch': 'from-purple-400 to-purple-500',
+      'practice-pitch': 'from-purple-400 to-purple-500',
+      'evaluation': 'from-pink-400 to-pink-500',
+      'keywords': 'from-indigo-400 to-indigo-500',
+    }
+    return colorMap[currentStage]
+  }
+
+  // 取得階段標題
+  const getStepTitle = () => {
+    const titleMap: Record<ConversationStage, string> = {
+      'home': 'Pitch Coach',
+      'upload': 'Upload Work',
+      'ai-intro': 'AI Intro',
+      'free-description': 'Free Share',
+      'qa-improve': 'Q&A Time',
+      'confirm-summary': 'Confirm Focus',
+      'generate-pitch': 'Generate Pitch',
+      'practice-pitch': 'Voice Practice',
+      'evaluation': 'Your Score',
+      'keywords': 'Pitch Notes',
+    }
+    return titleMap[currentStage]
+  }
+
+  // 取得階段編號
+  const getStepNumber = () => {
+    const stepMap: Record<ConversationStage, number> = {
+      'home': 0,
+      'upload': 1,
+      'ai-intro': 1,
+      'free-description': 2,
+      'qa-improve': 3,
+      'confirm-summary': 4,
+      'generate-pitch': 5,
+      'practice-pitch': 5,
+      'evaluation': 6,
+      'keywords': 7,
+    }
+    return stepMap[currentStage]
+  }
+
   // 取得階段標籤
-  const getStageLabel = (stage: ConversationStage): string => {
-    const labels: Record<ConversationStage, string> = {
+  const getStageLabel = (stage: ConversationStage | 'intro'): string => {
+    const labels: Record<ConversationStage | 'intro', string> = {
+      'home': '首頁 / Home',
       'upload': '上傳作品照片 / Upload Your Design',
-      'intro': 'AI 教練介紹 / Introduction',
+      'ai-intro': 'AI 教練介紹 / Introduction',
+      'free-description': '自由描述 / Free Description',
       'qa-improve': '回答問題與細節 / Add Details',
       'confirm-summary': '確認設計重點 / Confirm Summary',
       'generate-pitch': '生成 Pitch 稿 / Generate Pitch',
       'practice-pitch': '練習 Pitch / Practice Pitch',
       'evaluation': '評分與回饋 / Evaluation',
       'keywords': '關鍵字筆記 / Keywords',
+      'intro': 'AI 教練介紹 / Introduction',
     }
     return labels[stage] || stage
   }
@@ -560,8 +656,10 @@ export default function Home() {
   // 取得麥克風按鈕提示文字
   const getMicButtonLabel = (): string => {
     const labels: Record<ConversationStage, string> = {
+      'home': '點擊開始 Start',
       'upload': '點擊麥克風開始對話 Start Conversation',
-      'intro': '等待 AI 教練介紹...',
+      'ai-intro': '等待 AI 教練介紹...',
+      'free-description': '🎤 自由描述作品 Free Description',
       'qa-improve': '🎤 回答問題 / 增加細節 Add Details',
       'confirm-summary': '確認後點擊上方按鈕 Confirm Summary',
       'generate-pitch': '等待 Pitch 生成... Generate Pitch',
@@ -612,643 +710,522 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* 標題 */}
-        <div className="text-center mb-8 pt-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            3-Minute Design Pitch Coach
-          </h1>
-          <p className="text-gray-600">
-            語音對話式設計作品 Pitch 練習平台
-          </p>
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      {/* Phone Frame */}
+      <div className="relative w-full max-w-[430px] h-[932px] bg-black rounded-[60px] shadow-2xl overflow-hidden border-[14px] border-black">
+        {/* Phone Notch */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[30px] bg-black rounded-b-3xl z-50"></div>
+
+        {/* Status Bar */}
+        <div className="absolute top-0 left-0 right-0 h-[44px] px-6 flex items-center justify-between z-40 text-xs">
+          <span className="text-black/70">9:41</span>
+          <div className="flex items-center gap-1">
+            <span className="text-black/70">100%</span>
+          </div>
         </div>
 
-        {/* 圖片上傳區域 */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            📸 上傳作品照片 Upload Your Design
-          </h2>
-          
-          {/* 上傳方式選擇 - 只在 upload 階段顯示 */}
-          {currentStage === 'upload' && (
-            <>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                {/* 從相簿選擇 */}
-                <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
-                  <svg className="w-10 h-10 mb-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-sm font-semibold text-gray-700">從相簿選擇 from album</p>
-                  <p className="text-xs text-gray-500">選擇現有照片 choose existing photos</p>
+        {/* Content Area with Animation */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStage}
+            initial={{ x: 300, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -300, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className={`w-full h-full bg-gradient-to-br ${getStepColor()} pt-[44px]`}
+          >
+            {/* Header */}
+            {currentStage !== 'home' && (
+              <div className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-2xl text-black">
+                      {getStepTitle()}
+                    </h1>
+                    <p className="text-sm text-black/60">
+                      Step {getStepNumber()}/8
+                    </p>
+                  </div>
+                  <button className="w-8 h-8 rounded-full bg-black/10 flex items-center justify-center">
+                    <ChevronRight className="w-5 h-5 text-black" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Main Content */}
+            <div className="px-6 flex-1 flex flex-col justify-between pb-8">
+              {/* Home/Landing Page */}
+              {currentStage === 'home' && (
+                <div className="flex-1 flex flex-col justify-between pt-16 pb-12">
+                  <div className="flex-1 flex flex-col justify-between">
+                    {/* Title Section */}
+                    <div className="space-y-3">
+                      <h1 className="text-5xl text-white uppercase leading-tight tracking-tight">
+                        3-MINUTE
+                        <br />
+                        DESIGN
+                        <br />
+                        PITCH
+                      </h1>
+                      <p className="text-xl text-white/50 uppercase tracking-wide">
+                        COACH
+                      </p>
+                    </div>
+
+                    {/* Dot Pattern Visualization */}
+                    <div className="flex items-center justify-center py-8">
+                      <div className="grid grid-cols-12 gap-2">
+                        {Array.from({ length: 144 }).map((_, i) => {
+                          const row = Math.floor(i / 12)
+                          const col = i % 12
+                          const distance = Math.sqrt(
+                            Math.pow(col - 5.5, 2) + Math.pow(row - 5.5, 2)
+                          )
+                          const isInCircle = distance < 5.5
+                          return (
+                            <motion.div
+                              key={i}
+                              className={`w-2 h-2 rounded-full ${
+                                isInCircle ? "bg-white" : "bg-white/0"
+                              }`}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: isInCircle ? 1 : 0 }}
+                              transition={{
+                                delay: i * 0.005,
+                                duration: 0.3,
+                              }}
+                            />
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Features */}
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-1 h-8 bg-white"></div>
+                          <div>
+                            <p className="text-sm text-white/60 uppercase tracking-wide">
+                              01
+                            </p>
+                            <p className="text-white">
+                              Upload Design Work
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-1 h-8 bg-white"></div>
+                          <div>
+                            <p className="text-sm text-white/60 uppercase tracking-wide">
+                              02
+                            </p>
+                            <p className="text-white">
+                              Practice with AI Coach
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-1 h-8 bg-white"></div>
+                          <div>
+                            <p className="text-sm text-white/60 uppercase tracking-wide">
+                              03
+                            </p>
+                            <p className="text-white">
+                              Generate Pitch Notes
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Start Button */}
+                  <motion.button
+                    onClick={handleStageButton}
+                    className="w-full py-5 bg-white text-black rounded-none text-lg uppercase tracking-widest border-4 border-white hover:bg-white/90 transition-colors"
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    START
+                  </motion.button>
+                </div>
+              )}
+
+              {/* Upload Step */}
+              {currentStage === 'upload' && (
+                <div className="flex-1 flex flex-col">
+                  {uploadedImages.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {uploadedImages.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={img}
+                          alt={`Work ${idx}`}
+                          className="w-full aspect-square object-cover rounded-2xl"
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex-1 flex items-center justify-center">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-48 h-48 rounded-full bg-black/10 flex items-center justify-center backdrop-blur-sm hover:bg-black/20 transition-all"
+                    >
+                      <Camera className="w-24 h-24 text-black/40" />
+                    </button>
+                  </div>
+
                   <input
+                    ref={fileInputRef}
                     type="file"
-                    className="hidden"
                     accept="image/*"
                     multiple
                     onChange={handleImageUpload}
+                    className="hidden"
                   />
-                </label>
 
-                {/* 使用相機拍照 */}
-                <button
-                  onClick={openCamera}
-                  className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all"
-                >
-                  <svg className="w-10 h-10 mb-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <p className="text-sm font-semibold text-gray-700">拍照 take photo</p>
-                  <p className="text-xs text-gray-500">使用相機拍攝 use camera</p>
-                </button>
-              </div>
-              
-              <p className="text-xs text-gray-500 text-center">
-                💡 建議上傳 1-3 張清晰的作品照片（不同角度更佳） recommend 1-3 clear photos (different angles are better)
-              </p>
-            </>
-          )}
-
-          {/* 已上傳的圖片預覽 */}
-          {uploadedImages.length > 0 && (
-            <div className="grid grid-cols-3 gap-4 mt-4">
-              {uploadedImages.map((img, index) => (
-                <div key={index} className="relative group">
-                  <img
-                    src={img}
-                    alt={`上傳的作品 ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-lg"
-                  />
-                  <button
-                    onClick={() => removeImage(index)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* 主要操作按鈕 - 根據階段動態顯示 */}
-          {uploadedImages.length > 0 && (
-            <div className="mt-6">
-              <div className="text-center">
-                {/* 階段 1: 確認上傳作品 */}
-                {currentStage === 'upload' && (
-                  <>
+                  {uploadedImages.length > 0 && (
                     <button
                       onClick={handleStageButton}
-                      disabled={isProcessing || isSpeaking}
-                      className="btn-confirm-upload"
+                      className="w-full py-4 bg-black text-white rounded-full text-lg uppercase tracking-wide"
                     >
-                      📤 確認上傳作品 / Confirm Upload
+                      Start Practice
                     </button>
-                    <p className="text-sm text-gray-500 mt-2">
-                      AI 教練會先觀察您的作品並開始引導 / AI coach will observe your work and guide you
-                    </p>
-                  </>
-                )}
-
-                {/* 階段 2: 自由分享 */}
-                {currentStage === 'intro' && (
-                  <>
-                    <button
-                      onClick={isRecording ? stopRecording : handleStageButton}
-                      disabled={isProcessing || isSpeaking}
-                      className={isRecording ? 'btn-record-stop' : 'btn-record-start'}
-                    >
-                      {isRecording ? '🔴 停止錄音 / Stop Recording' : '🎤 自由分享 / Free Sharing'}
-                    </button>
-                    <p className="text-sm text-gray-500 mt-2">
-                      {isRecording 
-                        ? '正在錄音中... 說完後點擊按鈕停止錄音 / Recording... Click to stop after speaking' 
-                        : '點擊後開始錄音，自由分享您的設計想法 / Click to start recording and share your design ideas'
-                      }
-                    </p>
-                  </>
-                )}
-
-
-                {/* 階段 4: 回答問題/增加細節 */}
-                {currentStage === 'qa-improve' && (
-                  <>
-                    <button
-                      onClick={isRecording ? stopRecording : handleStageButton}
-                      disabled={isProcessing || isSpeaking}
-                      className={isRecording ? 'btn-record-stop' : 'btn-base btn-blue-cyan'}
-                    >
-                      {isRecording ? '🔴 停止錄音 / Stop Recording' : '🎤 回答問題/增加細節 / Answer Questions'}
-                    </button>
-                    <p className="text-sm text-gray-500 mt-2">
-                      {isRecording 
-                        ? '正在錄音中... 說完後點擊按鈕停止錄音 / Recording... Click to stop after speaking' 
-                        : '點擊後開始錄音，回答 AI 提出的問題 / Click to start recording and answer AI questions'
-                      }
-                    </p>
-                  </>
-                )}
-
-                {/* 階段 5: 確認生成 Pitch */}
-                {currentStage === 'confirm-summary' && (
-                  <>
-                    <div className="flex space-x-4 justify-center">
-                      <button
-                        onClick={() => handleConfirmStageButton('redescribe')}
-                        disabled={isProcessing || isSpeaking}
-                        className="btn-redescribe"
-                      >
-                        🔄 重新描述作品 / Redescribe
-                      </button>
-                      <button
-                        onClick={() => handleConfirmStageButton('confirm')}
-                        disabled={isProcessing || isSpeaking}
-                        className="btn-confirm-generate"
-                      >
-                        ✅ 確認生成 3 分鐘 Pitch / Confirm Generate 3-min Pitch
-                      </button>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-2 text-center">
-                      如果不滿意重點整理，可以重新描述；確認無誤後生成完整 pitch 稿 / Redescribe if unsatisfied; Generate pitch after confirmation
-                    </p>
-                  </>
-                )}
-
-                {/* 階段 6: Pitch 已生成 */}
-                {currentStage === 'generate-pitch' && (
-                  <>
-                    <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 mb-4">
-                      <p className="text-green-600 font-medium">✅ Pitch 已生成完成 / Pitch Generated Successfully</p>
-                      <p className="text-sm text-gray-500 mt-1">請先閱讀上方對話記錄中的 pitch 稿，準備好後開始練習 / Read the pitch above and prepare to practice</p>
-                    </div>
-                    <button
-                      onClick={handleStageButton}
-                      disabled={isProcessing || isSpeaking}
-                      className="btn-practice-pitch"
-                    >
-                      🎤 開始練習 Pitch / Start Practice
-                    </button>
-                    <p className="text-sm text-gray-500 mt-2">
-                      閱讀完 pitch 稿後，點擊開始練習 / Click to start practice after reading
-                    </p>
-                  </>
-                )}
-
-                {/* 階段 7: 語音練習 Pitch */}
-                {currentStage === 'practice-pitch' && !isRecording && (
-                  <>
-                    <button
-                      onClick={handleStageButton}
-                      disabled={isProcessing || isSpeaking}
-                      className="btn-practice-pitch"
-                    >
-                      🎤 開始語音練習 Pitch / Start Voice Practice
-                    </button>
-                    <p className="text-sm text-gray-500 mt-2">
-                      準備好後，點擊開始朗讀剛才生成的 pitch / Click to start reading the generated pitch
-                    </p>
-                  </>
-                )}
-
-                {/* 練習 Pitch 錄音中狀態 */}
-                {currentStage === 'practice-pitch' && isRecording && (
-                  <>
-                    <button
-                      onClick={stopRecording}
-                      disabled={isProcessing || isSpeaking}
-                      className="btn-record-stop"
-                    >
-                      🔴 停止錄音 / Stop Recording
-                    </button>
-                    <p className="text-sm text-gray-500 mt-2">
-                      正在錄音中... 說完後點擊按鈕停止錄音 / Recording... Click to stop after speaking
-                    </p>
-                  </>
-                )}
-
-                {/* 評分圖表顯示在 evaluation 階段 */}
-                {currentStage === 'evaluation' && evaluationScores && (
-                  <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">
-                      📊 Pitch 表達技巧評分 / Pitch Presentation Skills Evaluation
-                    </h3>
-                    <div className="space-y-4">
-                      {/* Originality */}
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium text-gray-700">Originality (內容原創性)</span>
-                          <span className="text-lg font-bold text-indigo-600">{evaluationScores.originality}/20</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                          <div 
-                            className="bg-gradient-to-r from-indigo-400 to-indigo-600 h-4 rounded-full transition-all duration-1000 ease-out"
-                            style={{ width: `${(evaluationScores.originality / 20) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-
-                          {/* Pronunciation */}
-                          <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium text-gray-700">Pronunciation (發音清晰度)</span>
-                              <span className="text-lg font-bold text-blue-600">{evaluationScores.pronunciation}/20</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                              <div 
-                                className="bg-gradient-to-r from-blue-400 to-blue-600 h-4 rounded-full transition-all duration-1000 ease-out"
-                                style={{ width: `${(evaluationScores.pronunciation / 20) * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-
-                          {/* Engaging Tone */}
-                          <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium text-gray-700">Engaging Tone (表達吸引力)</span>
-                              <span className="text-lg font-bold text-green-600">{evaluationScores.engagingTone}/20</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                              <div 
-                                className="bg-gradient-to-r from-green-400 to-green-600 h-4 rounded-full transition-all duration-1000 ease-out"
-                                style={{ width: `${(evaluationScores.engagingTone / 20) * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-
-                          {/* Content Delivery */}
-                          <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium text-gray-700">Content Delivery (內容表達)</span>
-                              <span className="text-lg font-bold text-purple-600">{evaluationScores.contentDelivery}/20</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                              <div 
-                                className="bg-gradient-to-r from-purple-400 to-purple-600 h-4 rounded-full transition-all duration-1000 ease-out"
-                                style={{ width: `${(evaluationScores.contentDelivery / 20) * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-
-                          {/* Time Management */}
-                          <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium text-gray-700">Time Management (時間掌控)</span>
-                              <span className="text-lg font-bold text-orange-600">{evaluationScores.timeManagement}/20</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                              <div 
-                                className="bg-gradient-to-r from-orange-400 to-orange-600 h-4 rounded-full transition-all duration-1000 ease-out"
-                                style={{ width: `${(evaluationScores.timeManagement / 20) * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-
-                      {/* 總分 */}
-                      <div className="pt-4 mt-4 border-t-2 border-gray-200">
-                        <div className="flex justify-between items-center">
-                          <span className="text-lg font-bold text-gray-800">總分 Total Score</span>
-                          <span className="text-2xl font-bold text-indigo-600">
-                            {evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement}/100
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 階段 8: 生成關鍵字 */}
-                {currentStage === 'evaluation' && (
-                  <>
-                    <button
-                      onClick={handleStageButton}
-                      disabled={isProcessing || isSpeaking}
-                      className="btn-base btn-yellow-amber"
-                    >
-                      📝 生成 Pitch 小抄 / Generate Pitch Cheat Sheet
-                    </button>
-                    <p className="text-sm text-gray-500 mt-2">
-                      點擊生成可複製的 Pitch 小抄筆記 / Click to generate copyable pitch cheat sheet
-                    </p>
-                  </>
-                )}
-
-                {/* 錄音中的狀態顯示 */}
-                {isRecording && (
-                  <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4">
-                    <div className="flex items-center justify-center space-x-3">
-                      <div className="w-4 h-4 bg-red-500 rounded-full recording-pulse"></div>
-                      <p className="text-red-600 font-semibold text-lg">🎙️ 錄音中... / Recording...</p>
-                    </div>
-                    <p className="text-sm text-gray-600 text-center mt-2">
-                      說完後點擊下方麥克風停止錄音 / Click microphone below to stop after speaking
-                    </p>
-                  </div>
-                )}
-
-                {/* 處理中的狀態 */}
-                {isProcessing && (
-                  <div className="flex items-center justify-center space-x-3 py-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    <p className="text-gray-600 font-medium">I'm processing your ideas...</p>
-                  </div>
-                )}
-
-                {/* AI 說話中的狀態 */}
-                {isSpeaking && (
-                  <div className="bg-purple-50 border-2 border-purple-500 rounded-xl p-4">
-                    <div className="flex items-center justify-center space-x-3">
-                      <svg className="w-6 h-6 text-purple-500 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                      </svg>
-                      <p className="text-purple-600 font-semibold text-lg">🔊 AI 教練說話中... / AI Coach Speaking...</p>
-                    </div>
-                    <p className="text-sm text-gray-600 text-center mt-2">
-                      請仔細聆聽 / Please listen carefully
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* 當前階段提示 */}
-              {currentStage !== 'upload' && !isRecording && !isProcessing && !isSpeaking && (
-                <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                  <p className="text-sm text-blue-700">
-                    <strong>當前階段 / Current Stage：</strong> {getStageLabel(currentStage)}
-                  </p>
+                  )}
                 </div>
               )}
-            </div>
-          )}
-        </div>
 
-        {/* 音頻播放確認模態對話框 */}
-        {showAudioModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-              <div className="text-center">
-                <div className="mb-4">
-                  <svg className="w-16 h-16 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                  </svg>
-                </div>
-                
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                  {pendingAudioUrl ? '音頻播放確認 / Audio Playback Confirmation' : '通知 / Notification'}
-                </h3>
-                
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  {pendingAudioText || '請點擊「確定」以播放語音回覆 / Please click "OK" to play audio'}
-                </p>
-                
-                <div className="flex space-x-4 justify-center">
-                  <button
-                    onClick={() => {
-                      setShowAudioModal(false)
-                      setPendingAudioUrl(null)
-                      setPendingAudioText('')
-                      // 如果用戶取消，也要重置音頻狀態
-                      setIsSpeaking(false)
-                      setCurrentSubtitle('')
-                      // 調用 resolve 函數以完成 Promise
-                      if (pendingAudioResolveRef.current) {
-                        pendingAudioResolveRef.current()
-                        pendingAudioResolveRef.current = null
-                      }
-                    }}
-                    className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
-                  >
-                    取消 / Cancel
-                  </button>
-                  <button
-                    onClick={confirmAudioPlay}
-                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
-                  >
-                    確定 / OK
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+              {/* Recording Steps */}
+              {(currentStage === 'ai-intro' ||
+                currentStage === 'free-description' ||
+                currentStage === 'qa-improve' ||
+                currentStage === 'practice-pitch') && (
+                <div className="flex-1 flex flex-col items-center justify-between">
+                  {/* Visual Indicator */}
+                  <div className="flex-1 flex items-center justify-center relative">
+                    <div className="relative w-64 h-64">
+                      {/* Outer ring */}
+                      <div className="absolute inset-0 rounded-full bg-black/10"></div>
 
-        {/* 相機模態視窗 */}
-        {showCamera && (
-          <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
-            <div className="relative w-full h-full max-w-4xl max-h-screen p-4">
-              {/* 關閉按鈕 */}
-              <button
-                onClick={closeCamera}
-                className="absolute top-8 right-8 z-10 bg-red-500 text-white rounded-full p-3 hover:bg-red-600 transition-all"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                      {/* Dot pattern */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        {currentStage === 'ai-intro' && isSpeaking ? (
+                          <div className="text-center">
+                            <motion.div
+                              className="text-4xl text-black uppercase tracking-wider"
+                              animate={{
+                                opacity: [0.4, 1, 0.4],
+                              }}
+                              transition={{
+                                duration: 1.5,
+                                repeat: Infinity,
+                              }}
+                            >
+                              AI
+                            </motion.div>
+                            <p className="text-sm text-black/60 mt-2">SPEAKING</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-8 gap-2">
+                            {Array.from({ length: 64 }).map((_, i) => {
+                              const distance = Math.sqrt(
+                                Math.pow((i % 8) - 3.5, 2) +
+                                  Math.pow(Math.floor(i / 8) - 3.5, 2)
+                              )
+                              const isInside = distance < 4
+                              const scale = isRecording
+                                ? 1 + audioLevel * 0.5 * Math.random()
+                                : 1
+                              return isInside ? (
+                                <motion.div
+                                  key={i}
+                                  className="w-2 h-2 rounded-full bg-black"
+                                  animate={{
+                                    scale: isRecording ? [1, scale, 1] : 1,
+                                    opacity: isRecording ? [0.4, 1, 0.4] : 0.8,
+                                  }}
+                                  transition={{
+                                    duration: 0.5,
+                                    repeat: isRecording ? Infinity : 0,
+                                    delay: i * 0.02,
+                                  }}
+                                />
+                              ) : (
+                                <div key={i} className="w-2 h-2" />
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-              {/* 相機預覽 */}
-              <div className="flex flex-col items-center justify-center h-full">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="max-w-full max-h-[70vh] rounded-lg shadow-2xl"
-                />
-                
-                {/* 拍照按鈕 */}
-                <button
-                  onClick={takePhoto}
-                  className="mt-6 bg-white text-gray-800 rounded-full p-6 hover:bg-gray-100 transition-all shadow-lg"
-                >
-                  <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                  </svg>
-                </button>
-                
-                <p className="mt-4 text-white text-sm">點擊圓形按鈕拍照 / Click circle button to take photo</p>
-              </div>
+                  {/* Timer */}
+                  <div className="text-center mb-4">
+                    <div className="text-4xl text-black">
+                      {formatTime(recordingTime)}
+                    </div>
+                    {isRecording && (
+                      <div className="text-sm text-black/60 mt-1">
+                        Recording...
+                      </div>
+                    )}
+                    {currentStage === 'ai-intro' && isSpeaking && (
+                      <div className="text-sm text-black/60 mt-1">
+                        AI is speaking...
+                      </div>
+                    )}
+                  </div>
 
-              {/* 隱藏的 canvas 用於捕捉畫面 */}
-              <canvas ref={canvasRef} className="hidden" />
-            </div>
-          </div>
-        )}
-
-
-        {/* 即時字幕顯示 */}
-        <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl shadow-lg p-6 mb-6 min-h-[120px]">
-          <div className="text-white">
-            {userTranscript && isRecording && (
-              <div className="subtitle-display">
-                <p className="text-sm opacity-80 mb-2">你正在說 / You are saying：</p>
-                <p className="text-lg font-medium">{userTranscript}</p>
-              </div>
-            )}
-            
-            {currentSubtitle && isSpeaking && (
-              <div className="subtitle-display">
-                <p className="text-sm opacity-80 mb-2">教練說 / Coach says：</p>
-                <p className="text-lg font-medium">{currentSubtitle}</p>
-              </div>
-            )}
-            
-            {!userTranscript && !currentSubtitle && (
-              <div className="text-center py-8">
-                <p className="text-xl opacity-80">字幕會在這裡即時顯示 / Subtitles will appear here in real-time</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-
-        {/* 對話歷史 */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 min-h-[300px] max-h-[400px] overflow-y-auto">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">💬 對話記錄 History</h2>
-          
-          {messages.length === 0 ? (
-            <div className="text-center text-gray-400 py-12">
-              <p>上傳作品照片後點擊按鈕開始 / Upload photos and click button to start</p>
-              <p className="text-sm mt-2">AI 教練會引導您完成英語 pitch 練習 / AI coach will guide you through English pitch practice</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                      msg.role === 'user'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {msg.timestamp.toLocaleTimeString('zh-TW', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                  {/* Subtitle Area */}
+                  <div className="w-full min-h-[80px] bg-black/10 rounded-3xl p-4 mb-6">
+                    <p className="text-center text-black/80 text-sm leading-relaxed">
+                      {currentSubtitle || userTranscript || "Tap to start speaking..."}
                     </p>
                   </div>
+
+                  {/* Action Buttons */}
+                  <div className="w-full flex flex-col items-center gap-3">
+                    <button
+                      onClick={
+                        currentStage === 'ai-intro'
+                          ? undefined
+                          : isRecording
+                          ? stopRecording
+                          : startRecording
+                      }
+                      disabled={currentStage === 'ai-intro' || isProcessing}
+                      className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${
+                        isRecording
+                          ? "bg-black text-white"
+                          : currentStage === 'ai-intro'
+                            ? "bg-black/20 text-black/40 cursor-not-allowed"
+                            : "bg-black text-white hover:scale-105"
+                      }`}
+                    >
+                      <div className="w-16 h-16 rounded-full bg-white/20"></div>
+                    </button>
+
+                    {/* Skip button for AI Intro */}
+                    {currentStage === 'ai-intro' && (
+                      <button
+                        onClick={() => {
+                          setIsSpeaking(false)
+                          setCurrentStage('free-description')
+                          setCurrentSubtitle('')
+                        }}
+                        className="text-black/60 text-sm underline hover:text-black"
+                      >
+                        Skip & Continue
+                      </button>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              )}
 
+              {/* Confirm Focus Step */}
+              {currentStage === 'confirm-summary' && (
+                <div className="flex-1 flex flex-col justify-between">
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center space-y-6">
+                      <div className="w-24 h-24 mx-auto border-4 border-black rounded-full flex items-center justify-center">
+                        <div className="w-12 h-12 bg-black rounded-full"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-black/60 uppercase tracking-wide mb-2">READY</p>
+                        <p className="text-3xl text-black uppercase tracking-tight leading-tight">
+                          GENERATE<br />3-MINUTE<br />PITCH
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
+                  <div className="flex space-x-4 justify-center">
+                    <button
+                      onClick={() => handleConfirmStageButton('redescribe')}
+                      disabled={isProcessing || isSpeaking}
+                      className="px-6 py-3 bg-black/10 text-black rounded-full text-sm uppercase tracking-wide"
+                    >
+                      Redescribe
+                    </button>
+                    <button
+                      onClick={() => handleConfirmStageButton('confirm')}
+                      disabled={isProcessing || isSpeaking}
+                      className="px-6 py-3 bg-black text-white rounded-full text-sm uppercase tracking-wide"
+                    >
+                      Generate
+                    </button>
+                  </div>
+                </div>
+              )}
 
-        {/* 關鍵字筆記顯示區域 */}
-        {currentStage === 'keywords' && generatedPitch && (
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">📝 Pitch 關鍵字提點 / Pitch Keywords</h2>
-            <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap font-mono text-sm">
-              {messages[messages.length - 1]?.content || ''}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-3 justify-center">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
-                  setPendingAudioUrl('')
-                  setPendingAudioText('✅ 已複製到剪貼簿！')
-                  setShowAudioModal(true)
-                }}
-                className="btn-copy-notes"
-              >
-                📋 複製關鍵字筆記 / Copy Keywords
-              </button>
-              <button
-                onClick={() => {
-                  setCurrentStage('practice-pitch')
-                  // 切換到練習階段，讓用戶可以再次練習
-                }}
-                disabled={isProcessing || isSpeaking}
-                className="btn-practice-again"
-              >
-                🔄 再次練習 Pitch / Practice Pitch Again
-              </button>
-              <button
-                onClick={handleStageButton}
-                disabled={isProcessing || isSpeaking}
-                className="btn-restart"
-              >
-                🔄 重新上傳新作品 / Upload New Work
-              </button>
-            </div>
-            <p className="text-sm text-gray-500 mt-2 text-center">
-              完成練習！可以複製筆記、再次練習或重新開始新的作品練習 / Practice complete! Copy notes, practice again or start new work
-            </p>
-          </div>
-        )}
+              {/* Generate Pitch Step */}
+              {currentStage === 'generate-pitch' && (
+                <div className="flex-1 flex flex-col justify-between">
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center space-y-6">
+                      <div className="w-24 h-24 mx-auto border-4 border-black rounded-full flex items-center justify-center">
+                        <div className="w-12 h-12 bg-black rounded-full"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-black/60 uppercase tracking-wide mb-2">GENERATED</p>
+                        <p className="text-3xl text-black uppercase tracking-tight leading-tight">
+                          PITCH<br />READY
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-        {/* 流程說明 */}
-        <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">📚 Pitch 練習流程 / Pitch Practice Flow</h3>
-          <div className="space-y-2 text-sm text-gray-700">
-            <div className={`flex items-start ${currentStage === 'upload' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2 mt-1">{currentStage === 'upload' ? '▶️' : '✓'}</span>
-              <div className="flex flex-col">
-                <span>1. 上傳作品照片 → 點擊「開始練習 Pitch」</span>
-                <span className="text-xs opacity-75">1. Upload photos → Click "Start Practice Pitch"</span>
-              </div>
+                  <button
+                    onClick={handleStageButton}
+                    disabled={isProcessing || isSpeaking}
+                    className="w-full py-4 bg-black text-white rounded-full text-lg uppercase tracking-wide"
+                  >
+                    Start Practice
+                  </button>
+                </div>
+              )}
+
+              {/* View Scores Step */}
+              {currentStage === 'evaluation' && evaluationScores && (
+                <div className="flex-1 flex flex-col justify-between">
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-8xl text-black mb-4">
+                        {evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement}
+                      </div>
+                      <div className="w-48 h-2 bg-black/20 rounded-full mx-auto overflow-hidden">
+                        <motion.div
+                          className="h-full bg-black"
+                          initial={{ width: 0 }}
+                          animate={{
+                            width: `${((evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement) / 100) * 100}%`,
+                          }}
+                          transition={{
+                            duration: 1,
+                            delay: 0.5,
+                          }}
+                        />
+                      </div>
+                      <p className="mt-4 text-black/60">
+                        Great work!
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleStageButton}
+                    className="w-full py-4 bg-black text-white rounded-full text-lg uppercase tracking-wide"
+                  >
+                    View Notes
+                  </button>
+                </div>
+              )}
+
+              {/* View Notes Step */}
+              {currentStage === 'keywords' && (
+                <div className="flex-1 flex flex-col justify-between">
+                  <div className="flex-1 overflow-y-auto space-y-3">
+                    {messages.length > 0 && messages[messages.length - 1]?.content && (
+                      <div className="p-4 bg-black/10 rounded-2xl">
+                        <p className="text-sm text-black whitespace-pre-wrap">
+                          {messages[messages.length - 1].content}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
+                        setPendingAudioUrl('')
+                        setPendingAudioText('✅ 已複製到剪貼簿！')
+                        setShowAudioModal(true)
+                      }}
+                      className="py-3 bg-black/10 text-black rounded-full uppercase tracking-wide text-sm"
+                    >
+                      Copy
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentStage('practice-pitch')
+                      }}
+                      disabled={isProcessing || isSpeaking}
+                      className="py-3 bg-black text-white rounded-full uppercase tracking-wide text-sm"
+                    >
+                      Practice
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
-            <div className="flex items-start">
-              <span className="mr-2 mt-1">{currentStage !== 'upload' ? '✓' : '○'}</span>
-              <div className="flex flex-col">
-                <span>2. 🎤 自由描述作品（想到什麼說什麼）</span>
-                <span className="text-xs opacity-75">2. 🎤 Free description (say what comes to mind)</span>
-              </div>
-            </div>
-            <div className={`flex items-start ${currentStage === 'qa-improve' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2 mt-1">{currentStage === 'qa-improve' ? '▶️' : ['confirm-summary', 'generate-pitch', 'practice-pitch', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <div className="flex flex-col">
-                <span>3. 🎤 回答問題 / 增加細節</span>
-                <span className="text-xs opacity-75">3. 🎤 Answer questions / Add details</span>
-              </div>
-            </div>
-            <div className={`flex items-start ${currentStage === 'confirm-summary' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2 mt-1">{currentStage === 'confirm-summary' ? '▶️' : ['generate-pitch', 'practice-pitch', 'evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <div className="flex flex-col">
-                <span>4. 確認設計重點 → 點擊「確認生成 3 分鐘 Pitch」</span>
-                <span className="text-xs opacity-75">4. Confirm design focus → Click "Confirm Generate 3-min Pitch"</span>
-              </div>
-            </div>
-            <div className={`flex items-start ${currentStage === 'practice-pitch' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2 mt-1">{currentStage === 'practice-pitch' ? '▶️' : ['evaluation', 'keywords'].includes(currentStage) ? '✓' : '○'}</span>
-              <div className="flex flex-col">
-                <span>5. 🎤 語音練習 Pitch</span>
-                <span className="text-xs opacity-75">5. 🎤 Voice practice Pitch</span>
-              </div>
-            </div>
-            <div className={`flex items-start ${currentStage === 'evaluation' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2 mt-1">{currentStage === 'evaluation' ? '▶️' : currentStage === 'keywords' ? '✓' : '○'}</span>
-              <div className="flex flex-col">
-                <span>6. 查看評分 → 點擊「生成 Pitch 小抄」</span>
-                <span className="text-xs opacity-75">6. View scores → Click "Generate Pitch Cheat Sheet"</span>
-              </div>
-            </div>
-            <div className={`flex items-start ${currentStage === 'keywords' ? 'font-bold text-blue-600' : ''}`}>
-              <span className="mr-2 mt-1">{currentStage === 'keywords' ? '▶️' : '○'}</span>
-              <div className="flex flex-col">
-                <span>7. 📝 查看關鍵字筆記 → 複製筆記、再次練習或重新開始</span>
-                <span className="text-xs opacity-75">7. 📝 View keyword notes → Copy notes, practice again or restart</span>
-              </div>
-            </div>
-            <div className="flex items-start">
-              <span className="mr-2 mt-1">🔄</span>
-              <div className="flex flex-col">
-                <span>8. 三個選項：複製筆記 / 再次練習 Pitch / 重新上傳新作品</span>
-                <span className="text-xs opacity-75">8. Three options: Copy notes / Practice Pitch again / Upload new work</span>
-              </div>
-            </div>
-          </div>
-        </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Home Indicator */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/30 rounded-full"></div>
       </div>
-    </main>
+
+      {/* 音頻播放確認模態對話框 */}
+      {showAudioModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="mb-4">
+                <svg className="w-16 h-16 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+              </div>
+              
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                {pendingAudioUrl ? '音頻播放確認 / Audio Playback Confirmation' : '通知 / Notification'}
+              </h3>
+              
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                {pendingAudioText || '請點擊「確定」以播放語音回覆 / Please click "OK" to play audio'}
+              </p>
+              
+              <div className="flex space-x-4 justify-center">
+                <button
+                  onClick={() => {
+                    setShowAudioModal(false)
+                    setPendingAudioUrl(null)
+                    setPendingAudioText('')
+                    // 如果用戶取消，也要重置音頻狀態
+                    setIsSpeaking(false)
+                    setCurrentSubtitle('')
+                    // 調用 resolve 函數以完成 Promise
+                    if (pendingAudioResolveRef.current) {
+                      pendingAudioResolveRef.current()
+                      pendingAudioResolveRef.current = null
+                    }
+                  }}
+                  className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                >
+                  取消 / Cancel
+                </button>
+                <button
+                  onClick={confirmAudioPlay}
+                  className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                >
+                  確定 / OK
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
