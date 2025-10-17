@@ -457,9 +457,12 @@ export default function Home() {
       // 確認生成 3 mins pitch
       await triggerStageAction('generate-pitch')
     } else if (action === 'redescribe') {
-      // 重新描述作品，回到 qa-improve 階段並觸發 AI 回應
+      // 重新描述作品，回到 qa-improve 階段但不觸發 AI 回應，讓用戶可以錄音
       setCurrentStage('qa-improve')
-      await triggerStageAction('qa-improve')
+      // 清除相關狀態，準備新的錄音
+      setUserTranscript('')
+      setCurrentSubtitle('')
+      setSubtitleHistory([])
     }
   }
 
@@ -939,24 +942,47 @@ export default function Home() {
                       <div className="absolute inset-0 flex items-center justify-center">
                         {currentStage === 'free-description' && isSpeaking ? (
                           <div className="text-center">
-                            <motion.div
-                              className="text-4xl md:text-5xl lg:text-6xl text-black uppercase tracking-wider"
-                              animate={{ opacity: [0.4, 1, 0.4] }}
-                              transition={{ duration: 1.5, repeat: Infinity }}
-                            >
-                              AI
-                            </motion.div>
-                            <p className="text-sm md:text-base text-black/60 mt-2">SPEAKING</p>
-                          </div>
+                            {/* Audio Wave Bars */}
+                            <div className="flex items-center justify-center gap-2 mb-6">
+                              {Array.from({ length: 7 }).map((_, i) => (
+                                <motion.div
+                                  key={i}
+                                  className="w-2 bg-black rounded-full"
+                                  animate={{
+                                    height: [
+                                      20,
+                                      Math.random() * 60 + 20,
+                                      Math.random() * 80 + 20,
+                                      Math.random() * 60 + 20,
+                                      20,
+                                    ],
+                                  }}
+                                  transition={{
+                                    duration: 0.8,
+                                    repeat: Infinity,
+                                    delay: i * 0.1,
+                                    ease: "easeInOut",
+                                  }}
+                                />
+                              ))}
+                        </div>
+                            <p className="text-sm text-black/60 uppercase tracking-wide">
+                              AI Speaking
+                            </p>
+                        </div>
                         ) : isProcessing ? (
                           <div className="text-center">
                             <motion.div
                               className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
                               animate={{ rotate: 360 }}
-                              transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                              transition={{
+                                duration: 0.8,
+                                repeat: Infinity,
+                                ease: [0.4, 0, 0.2, 1],
+                              }}
                             />
-                            <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Processing</p>
-                            </div>
+                            <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
+                      </div>
                         ) : (
                           <div className="grid grid-cols-8 gap-2">
                             {Array.from({ length: 64 }).map((_, i) => {
@@ -1005,12 +1031,12 @@ export default function Home() {
                     {isProcessing && (
                       <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
                         Listening
-                    </div>
+                          </div>
                     )}
                     {currentStage === 'free-description' && isSpeaking && (
                       <div className="text-sm md:text-base text-black/60 mt-1 uppercase tracking-wide">
                         AI Speaking
-                      </div>
+                            </div>
                     )}
                           </div>
 
@@ -1018,20 +1044,20 @@ export default function Home() {
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">
                     <div className="space-y-2">
                       {/* 當前字幕 - 放在最上面 */}
-                      <div>
+                          <div>
                         <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
                           {currentSubtitle || userTranscript || "Tap to start speaking..."}
                         </p>
-                      </div>
+                            </div>
                       {/* 對話歷史 - 只顯示最近一句話 */}
                       {subtitleHistory.length > 0 && (
                         <div className="border-t border-black/20 pt-2">
                           <p className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
                             {subtitleHistory[subtitleHistory.length - 1]}
                           </p>
-                        </div>
+                            </div>
                       )}
-                    </div>
+                          </div>
                         </div>
 
                   {/* Action Buttons */}
@@ -1060,7 +1086,7 @@ export default function Home() {
                         <div className="text-xs md:text-sm text-black/50 text-center uppercase tracking-wide">
                           <p>Microphone permission needed</p>
                           <p>Tap button to enable</p>
-                        </div>
+                  </div>
                 )}
                         </div>
                   </div>
@@ -1081,7 +1107,7 @@ export default function Home() {
                     </p>
                   </div>
               </div>
-        </div>
+              </div>
 
                   {/* Subtitle Area */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">
@@ -1090,18 +1116,18 @@ export default function Home() {
                       <div>
                         <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
                           {currentSubtitle || "確認設計重點後，點擊 Generate 開始生成 3 分鐘 pitch..."}
-                        </p>
-                      </div>
+                  </p>
+                </div>
                       {/* 對話歷史 - 只顯示最近一句話 */}
                       {subtitleHistory.length > 0 && (
                         <div className="border-t border-black/20 pt-2">
                           <p className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
                             {subtitleHistory[subtitleHistory.length - 1]}
                           </p>
-                        </div>
-                      )}
+            </div>
+          )}
                     </div>
-                  </div>
+        </div>
 
                   <div className="flex space-x-4 justify-center">
               <button
