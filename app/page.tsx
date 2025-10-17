@@ -1178,7 +1178,7 @@ export default function Home() {
               {/* View Scores Step */}
               {currentStage === 'evaluation' && evaluationScores && (
                 <div className="flex-1 flex flex-col justify-between">
-                  <div className="flex-1 flex items-center justify-center">
+                  <div className="flex-1 flex flex-col items-center justify-center space-y-6">
                     <div className="text-center">
                       <div className="text-8xl md:text-9xl lg:text-[12rem] text-black mb-4">
                         {evaluationScores.originality + evaluationScores.pronunciation + evaluationScores.engagingTone + evaluationScores.contentDelivery + evaluationScores.timeManagement}
@@ -1200,13 +1200,33 @@ export default function Home() {
                         Great work!
                     </p>
         </div>
+
+                    {/* Subtitle Area */}
+                    <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6">
+                      <div className="space-y-2">
+                        {/* 當前字幕 - 放在最上面 */}
+                        <div>
+                          <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
+                            {currentSubtitle || "查看您的評分結果和改進建議..."}
+                  </p>
+                </div>
+                        {/* 對話歷史 - 只顯示最近一句話 */}
+                        {subtitleHistory.length > 0 && (
+                          <div className="border-t border-black/20 pt-2">
+                            <p className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
+                              {subtitleHistory[subtitleHistory.length - 1]}
+                            </p>
+            </div>
+          )}
+                      </div>
+        </div>
             </div>
 
                   <button
                     onClick={handleStageButton}
                     className="w-full py-4 md:py-5 bg-black text-white rounded-full text-lg md:text-xl uppercase tracking-wide"
                   >
-                    View Notes
+                    Generate Pitch Cheat Sheet
                   </button>
                   </div>
                 )}
