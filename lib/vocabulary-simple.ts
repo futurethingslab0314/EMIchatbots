@@ -169,6 +169,7 @@ export async function sendMessageSimple(
   stage?: string
 ): Promise<string> {
   // 根據階段決定是否使用系統 prompt
+  // 只有 free-description 階段需要系統 prompt（因為要分析圖片）
   const shouldUseSystemPrompt = stage === 'free-description' && images && images.length > 0
   const systemPrompt = shouldUseSystemPrompt ? await getSystemPrompt() : ''
 
@@ -205,6 +206,10 @@ export async function sendMessageSimple(
   // 添加歷史訊息和當前用戶訊息
   chatMessages.push(...messages)
   chatMessages.push({ role: 'user', content: userContent })
+
+  // 調試信息
+  console.log(`🎯 [${stage}] 發送給 AI 的 prompt:`, userMessage.substring(0, 100) + '...')
+  console.log(`📝 [${stage}] 最終 messages 數量:`, chatMessages.length)
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o', // gpt-4o 支援 vision

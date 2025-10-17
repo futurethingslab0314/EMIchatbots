@@ -558,15 +558,17 @@ export default function Home() {
   // 處理確認階段按鈕（兩個選項）
   const handleConfirmStageButton = async (action: 'confirm' | 'redescribe') => {
     if (action === 'confirm') {
-      // 確認生成 3 mins pitch
+      // 確認生成 3 mins pitch → 立刻進入 Step 6 (practice-pitch)
+      setCurrentStage('practice-pitch')
+      // 觸發 AI 生成 pitch
       await triggerStageAction('generate-pitch')
     } else if (action === 'redescribe') {
       // 重新描述作品，回到 qa-improve 階段但不觸發 AI 回應，讓用戶可以錄音
       setCurrentStage('qa-improve')
-      // 清除相關狀態，準備新的錄音
+      // 清除當前錄音狀態，但保留歷史字幕
       setUserTranscript('')
       setCurrentSubtitle('')
-      setSubtitleHistory([])
+      // 不清除 subtitleHistory，保留歷史文字
     }
   }
 
@@ -609,7 +611,8 @@ export default function Home() {
         break
       
       case 'generate-pitch':
-        // Pitch 已生成，準備練習 → 切換到 practice-pitch 階段
+        // 這個階段現在不會被直接調用，因為會直接進入 practice-pitch
+        // 保留這個 case 以防萬一
         setCurrentStage('practice-pitch')
         break
       
@@ -813,11 +816,11 @@ export default function Home() {
       console.log('📝 AI 回應內容:', response)
       
       // 嘗試解析評分（尋找數字格式）
-      const originalityMatch = response.match(/Originality[：:]\s*(\d+)/i) || response.match(/原創性[）：]*\s*(\d+)/)
-      const pronunciationMatch = response.match(/Pronunciation[：:]\s*(\d+)/i) || response.match(/發音[清晰度）：]*\s*(\d+)/)
-      const engagingMatch = response.match(/Engaging Tone[：:]\s*(\d+)/i) || response.match(/表達吸引力[）：]*\s*(\d+)/)
-      const contentMatch = response.match(/Content Delivery[：:]\s*(\d+)/i) || response.match(/內容表達[）：]*\s*(\d+)/)
-      const timeMatch = response.match(/Time Management[：:]\s*(\d+)/i) || response.match(/時間[掌控）：]*\s*(\d+)/)
+      const originalityMatch = response.match(/Originality[：:]\s*(\d+)(?:\/20)?/i) || response.match(/原創性[）：]*\s*(\d+)/)
+      const pronunciationMatch = response.match(/Pronunciation[：:]\s*(\d+)(?:\/20)?/i) || response.match(/發音[清晰度）：]*\s*(\d+)/)
+      const engagingMatch = response.match(/Engaging Tone[：:]\s*(\d+)(?:\/20)?/i) || response.match(/表達吸引力[）：]*\s*(\d+)/)
+      const contentMatch = response.match(/Content Delivery[：:]\s*(\d+)(?:\/20)?/i) || response.match(/內容表達[）：]*\s*(\d+)/)
+      const timeMatch = response.match(/Time Management[：:]\s*(\d+)(?:\/20)?/i) || response.match(/時間[掌控）：]*\s*(\d+)/)
 
       console.log('🎯 匹配結果:', {
         originality: originalityMatch?.[1],
@@ -1361,6 +1364,49 @@ export default function Home() {
                   </button>
                 </div>
                 )}
+
+              {/* View Scores Step - Fallback when scores not parsed */}
+              {currentStage === 'evaluation' && !evaluationScores && (
+                <div className="flex-1 flex flex-col justify-between pb-4">
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center space-y-6">
+                      <div className="text-6xl md:text-7xl text-black/20">📊</div>
+                      <div className="space-y-2">
+                        <h2 className="text-2xl md:text-3xl text-black">評分處理中...</h2>
+                        <p className="text-sm md:text-base text-black/60">正在分析您的表現</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 字幕區域 */}
+                  <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6">
+                    <div className="space-y-2">
+                      {/* 當前字幕 */}
+                      <div>
+                        <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
+                          {currentSubtitle || "正在生成評分結果..."}
+                        </p>
+                      </div>
+                      {/* 對話歷史 */}
+                      {subtitleHistory.length > 0 && (
+                        <div className="border-t border-black/20 pt-2">
+                          <p className="text-center text-black/60 text-xs md:text-sm leading-relaxed">
+                            {subtitleHistory[subtitleHistory.length - 1]}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 底部按鈕 */}
+                  <button
+                    onClick={handleStageButton}
+                    className="w-full py-4 mt-4 bg-black text-white rounded-full text-lg uppercase tracking-wide"
+                  >
+                    Generate Pitch Cheat Sheet
+                  </button>
+                </div>
+              )}
 
               {/* View Notes Step */}
               {currentStage === 'keywords' && (
