@@ -449,8 +449,9 @@ export default function Home() {
       // 確認生成 3 mins pitch
       await triggerStageAction('generate-pitch')
     } else if (action === 'redescribe') {
-      // 重新描述作品，回到 qa-improve 階段
+      // 重新描述作品，回到 qa-improve 階段並觸發 AI 回應
       setCurrentStage('qa-improve')
+      await triggerStageAction('qa-improve')
     }
   }
 
@@ -1041,6 +1042,13 @@ export default function Home() {
                   </div>
               </div>
         </div>
+
+                  {/* Subtitle Area */}
+                  <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">
+                    <p className="text-center text-black/80 text-sm md:text-base leading-relaxed">
+                      {currentSubtitle || "確認設計重點後，點擊 Generate 開始生成 3 分鐘 pitch..."}
+                    </p>
+                  </div>
 
                   <div className="flex space-x-4 justify-center">
               <button
