@@ -623,14 +623,14 @@ export default function Home() {
     const stepMap: Record<ConversationStage, number> = {
       'home': 0,
       'upload': 1,
-      'ai-intro': 1,
-      'free-description': 2,
-      'qa-improve': 3,
-      'confirm-summary': 4,
-      'generate-pitch': 5,
-      'practice-pitch': 5,
-      'evaluation': 6,
-      'keywords': 7,
+      'ai-intro': 2,
+      'free-description': 3,
+      'qa-improve': 4,
+      'confirm-summary': 5,
+      'generate-pitch': 6,
+      'practice-pitch': 7,
+      'evaluation': 8,
+      'keywords': 8,
     }
     return stepMap[currentStage]
   }

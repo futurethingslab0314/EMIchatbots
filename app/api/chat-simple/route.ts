@@ -3,14 +3,15 @@ import { openai, sendMessageSimple } from '@/lib/vocabulary-simple'
 
 // 定義對話階段
 type ConversationStage = 
-  | 'upload' | 'intro' | 'qa-improve' 
+  | 'upload' | 'ai-intro' | 'free-description' | 'qa-improve' 
   | 'confirm-summary' | 'generate-pitch' | 'practice-pitch' | 'practice-again'
   | 'evaluation' | 'keywords'
 
 // 階段對應的 prompt
 const STAGE_PROMPTS: Record<ConversationStage, string> = {
   'upload': '',
-  'intro': '學生剛剛上傳了他們的設計作品圖片，現在準備開始 pitch 練習。\n\n【你的任務】：\n1. 觀察並簡短描述你看到的設計特徵（造型、材質、色彩等），展現你的專業能力\n2. 用友善鼓勵的態度引導學生進入「think out loud」階段\n3. 請學生自然地分享設計概念和想法\n\n【重要】：\n• 直接開始對話，不要說「抱歉」或「無法」等消極詞語\n• 你完全有能力觀察和討論設計作品的視覺特徵\n• 你的角色是協助學生「用英語清楚表達」，不是給設計建議\n• 展現專業和自信，讓學生感到被支持',
+  'ai-intro': '學生剛剛上傳了他們的設計作品圖片，現在準備開始 pitch 練習。\n\n【你的任務】：\n1. 觀察並簡短描述你看到的設計特徵（造型、材質、色彩等），展現你的專業能力\n2. 用友善鼓勵的態度引導學生進入「think out loud」階段\n3. 請學生自然地分享設計概念和想法\n\n【重要】：\n• 直接開始對話，不要說「抱歉」或「無法」等消極詞語\n• 你完全有能力觀察和討論設計作品的視覺特徵\n• 你的角色是協助學生「用英語清楚表達」，不是給設計建議\n• 展現專業和自信，讓學生感到被支持',
+  'free-description': '學生正在自由描述他們的設計作品。請聆聽並準備在他們完成後提出問題來幫助他們完善 pitch。',
   'qa-improve': 'Great! Thank you for sharing your presentation. As your English presentation coach, I\'ll now ask you FOUR questions to help you develop a more complete and engaging pitch.\n\n【Your Mission】You are an English presentation coach. Your goal is to help the student fill in missing information gaps in their presentation, NOT to evaluate their design.\n\n【Task】Ask EXACTLY FOUR QUESTIONS (3 content questions + 1 audience question):\n\n【First THREE questions】Pick the 3 most helpful areas from these categories based on what the student hasn\'t clearly explained yet:\n\n1. **Context & Users**: What problem or pain point? Who are the users? What is the usage scenario or context?\n2. **Methods & Process**: What research methods? What prototyping stages (low/high fidelity)? Any iteration or testing evidence?\n3. **Materials & Craftsmanship**: Why these materials? Structure? Manufacturing process? Durability? Sustainability?\n4. **Visual/Interaction Language**: Composition? Hierarchy? Tactile feedback? Usability? Accessibility?\n5. **Results & Evaluation**: Any quantitative metrics? Qualitative feedback? Impact or benefits?\n\n【Question Requirements】:\n- Each question must be specific and answerable (avoid yes/no questions)\n- Keep each question concise: ≤20 words in English or ≤30 characters in Chinese\n- Questions should help them CLARIFY what they\'ve already done, not suggest new directions\n\n【FOURTH question】Ask about their presentation target audience:\n"Who is your target audience for this presentation: design professionals (professors, industry practitioners) or non-design audiences (general public)?"\n\n【Format】:\n1. [First clarifying question]\n2. [Second clarifying question]\n3. [Third clarifying question]\n4. [Audience confirmation question]\n\n【IMPORTANT】You are helping them EXPRESS their existing work more clearly. You are NOT evaluating, critiquing, or suggesting design changes. Stay positive and encouraging.',
   'confirm-summary': '根據學生的描述和回答，整理出他們想要「表達的設計重點」（120-180 字英文段落）。簡潔整理學生「說了什麼」，不是評論設計好壞。這只是「快速確認重點」，不是生成完整的 pitch draft。使用專業詞彙，邏輯清楚。最後請學生確認這個整理是否準確反映他們的想法。格式】：用 2-3 個短段落呈現，不要寫成完整的演講稿。',
   'generate-pitch': '根據學生確認的內容和目標聽眾，生成一個 200 words 以內的 3 分鐘英文 pitch 稿（一個段落）。\n\n【重點】這是協助學生「表達他們的設計」，不是重新設計或添加新想法。保持學生原本的設計概念和內容。\n\n結構建議：Hook → Background → Design Intent → Process → Materials & Rationale → Outcomes → Impact\n\n使用適合目標聽眾的語言。',
@@ -22,8 +23,9 @@ const STAGE_PROMPTS: Record<ConversationStage, string> = {
 
 // 階段轉換邏輯
 const STAGE_TRANSITIONS: Record<ConversationStage, ConversationStage> = {
-  'upload': 'intro',
-  'intro': 'intro', // 保持 intro 階段，直到錄音完成
+  'upload': 'ai-intro',
+  'ai-intro': 'free-description', // AI 介紹完成後進入自由描述階段
+  'free-description': 'free-description', // 保持自由描述階段，直到錄音完成
   'qa-improve': 'confirm-summary',
   'confirm-summary': 'generate-pitch',
   'generate-pitch': 'practice-pitch',
@@ -72,8 +74,8 @@ export async function POST(request: NextRequest) {
         throw new Error(`未定義的階段 prompt: ${currentStage}`)
       }
 
-      // 只有在 intro 階段需要傳送圖片（讓 AI 看到作品）
-      const shouldSendImages = currentStage === 'intro'
+      // 只有在 ai-intro 階段需要傳送圖片（讓 AI 看到作品）
+      const shouldSendImages = currentStage === 'ai-intro'
 
       const reply = await sendMessageSimple(
         messages,
@@ -135,9 +137,9 @@ export async function POST(request: NextRequest) {
       contextPrompt = `學生正在練習剛才生成的 pitch。他們說的內容是：「${userText}」\n\n參考 pitch 稿：\n${generatedPitch}\n\n請在他們練習完後，準備進行評分。`
     }
 
-    // 只有在 intro 階段需要圖片（首次介紹時讓 AI 看到作品）
+    // 只有在 ai-intro 階段需要圖片（首次介紹時讓 AI 看到作品）
     // 其他階段專注於語言表達，不需要圖片
-    const shouldSendImages = currentStage === 'intro'
+    const shouldSendImages = currentStage === 'ai-intro'
 
     const assistantReply = await sendMessageSimple(
       messages,
@@ -163,7 +165,10 @@ export async function POST(request: NextRequest) {
     let nextStage: ConversationStage | undefined
 
     // 根據回應內容判斷是否該進入下一階段
-    if (currentStage === 'intro') {
+    if (currentStage === 'ai-intro') {
+      // AI 介紹完成後，轉到自由描述階段
+      nextStage = 'free-description'
+    } else if (currentStage === 'free-description') {
       // 學生錄音完成後，直接轉到 qa-improve 階段
       // AI 會在這個階段提出問題
       nextStage = 'qa-improve'
