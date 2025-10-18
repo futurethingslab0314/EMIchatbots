@@ -1069,7 +1069,7 @@ export default function Home() {
                       <p className="text-sm md:text-base text-white/60 uppercase tracking-wide">
                       (請使用電腦瀏覽器） 
                       <br /> 
-                      (Recommend to use computer browser)
+                      (Use computer browser)
                       </p>
                     </div>
 
