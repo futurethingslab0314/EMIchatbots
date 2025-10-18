@@ -34,7 +34,9 @@ const STAGE_TRANSITIONS: Record<ConversationStage, ConversationStage> = {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('📨 開始解析 FormData...')
     const formData = await request.formData()
+    console.log('✅ FormData 解析完成')
     const audioFile = formData.get('audio') as File | null
     const messagesStr = formData.get('messages') as string
     const imagesStr = formData.get('images') as string
@@ -147,6 +149,8 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`📊 接收音訊檔案大小: ${(audioFile.size / 1024 / 1024).toFixed(2)}MB`)
+    console.log(`📊 音訊檔案類型: ${audioFile.type}`)
+    console.log(`📊 音訊檔案名稱: ${audioFile.name}`)
 
     // 檢查 API Key
     if (!process.env.OPENAI_API_KEY) {
@@ -238,9 +242,13 @@ export async function POST(request: NextRequest) {
     console.error('錯誤堆疊:', error.stack)
     
     let errorMessage = '處理請求時發生錯誤'
+    let statusCode = 500
     
     if (error.message?.includes('API key')) {
       errorMessage = 'OpenAI API Key 設定錯誤，請檢查環境變數'
+    } else if (error.message?.includes('413') || error.message?.includes('Content Too Large')) {
+      errorMessage = '音訊檔案過大，請縮短錄音時間後重試'
+      statusCode = 413
     } else if (error.message?.includes('timeout') || error.message?.includes('Speech generation timeout')) {
       errorMessage = '語音生成超時，請稍後再試'
     } else if (error.message?.includes('quota')) {
@@ -251,6 +259,7 @@ export async function POST(request: NextRequest) {
       errorMessage = '語音處理失敗，請重新錄音'
     } else if (error.message?.includes('504')) {
       errorMessage = '伺服器處理超時，請重新嘗試'
+      statusCode = 504
     }
     
     return NextResponse.json(
@@ -259,7 +268,7 @@ export async function POST(request: NextRequest) {
         details: error.message,
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      { status: statusCode }
     )
   }
 }
