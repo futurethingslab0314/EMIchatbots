@@ -342,7 +342,8 @@ export default function Home() {
           setSubtitleHistory(prev => [...prev, transcription])
         }
         setSubtitleHistory(prev => [...prev, reply])
-        await playAudioWithSubtitles(audioUrl, reply)
+        // 不等待音頻播放完成，避免在手機 Safari 中卡住
+        playAudioWithSubtitles(audioUrl, reply)
       }
       // --- 修正結束 ---
     } catch (error) {
@@ -515,13 +516,12 @@ export default function Home() {
 
   // 停止音頻播放
   const stopAudioPlayback = () => {
-    console.log('🛑 停止音頻播放，當前 isSpeaking:', isSpeaking)
+    console.log('🛑 停止音頻播放')
     setIsSpeaking(false)
     setCurrentSubtitle('')
     // 停止所有正在播放的音頻
     const audioElements = document.querySelectorAll('audio')
     audioElements.forEach(audio => {
-      console.log('🛑 停止音頻元素:', audio.src)
       audio.pause()
       audio.currentTime = 0
       audio.remove()
@@ -531,7 +531,6 @@ export default function Home() {
       pendingAudioResolveRef.current()
       pendingAudioResolveRef.current = null
     }
-    console.log('✅ 音頻播放已停止，isSpeaking 設為 false')
   }
 
   // 處理圖片上傳
