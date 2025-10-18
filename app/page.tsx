@@ -307,13 +307,9 @@ export default function Home() {
       if (nextStage) {
         setCurrentStageWithLanguage(nextStage)
         
-        // 自動觸發邏輯（只在 processAudio 中保留）
-        if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
-            (currentStage === 'qa-improve' && nextStage === 'confirm-summary')) {
-          setTimeout(async () => {
-            // 使用 nextStage 作為觸發的階段，而不是 currentStage
-            await triggerStageAction(nextStage)
-          }, 500) // 稍微延遲，確保狀態更新完成
+        // 自動觸發下一階段的 AI 回應
+        if (nextStage === 'qa-improve' || nextStage === 'confirm-summary') {
+          setTimeout(() => triggerStageAction(nextStage), 500)
         }
       }
 
