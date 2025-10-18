@@ -226,6 +226,19 @@ export default function Home() {
 
       mediaRecorderRef.current.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        
+        // 檢查檔案大小（限制為 10MB）
+        const maxSize = 10 * 1024 * 1024 // 10MB
+        if (audioBlob.size > maxSize) {
+          console.warn('⚠️ 音訊檔案過大，嘗試壓縮...')
+          setPendingAudioUrl('')
+          setPendingAudioText('音訊檔案過大，請縮短錄音時間後重試')
+          setShowAudioModal(true)
+          stream.getTracks().forEach(track => track.stop())
+          return
+        }
+        
+        console.log(`📊 音訊檔案大小: ${(audioBlob.size / 1024 / 1024).toFixed(2)}MB`)
         await processAudio(audioBlob)
         stream.getTracks().forEach(track => track.stop())
       }
@@ -1233,19 +1246,38 @@ export default function Home() {
               {/* Confirm Focus Step */}
               {currentStage === 'confirm-summary' && (
                 <div className="flex-1 flex flex-col justify-between">
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center space-y-6">
-                      <div className="w-24 h-24 md:w-32 md:h-32 mx-auto border-4 border-black rounded-full flex items-center justify-center">
-                        <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full"></div>
-                            </div>
-                          <div>
-                        <p className="text-sm md:text-base text-black/60 uppercase tracking-wide mb-2">READY</p>
-                        <p className="text-3xl md:text-4xl lg:text-5xl text-black uppercase tracking-tight leading-tight">
-                          GENERATE<br />3-MINUTE<br />PITCH
-                    </p>
-                            </div>
-                            </div>
-                          </div>
+                  {isProcessing ? (
+                    // 顯示 Thinking... 動畫
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center">
+                        <motion.div
+                          className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 0.8,
+                            repeat: Infinity,
+                            ease: [0.4, 0, 0.2, 1],
+                          }}
+                        />
+                        <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    // 顯示正常內容
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center space-y-6">
+                        <div className="w-24 h-24 md:w-32 md:h-32 mx-auto border-4 border-black rounded-full flex items-center justify-center">
+                          <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full"></div>
+                        </div>
+                        <div>
+                          <p className="text-sm md:text-base text-black/60 uppercase tracking-wide mb-2">READY</p>
+                          <p className="text-3xl md:text-4xl lg:text-5xl text-black uppercase tracking-tight leading-tight">
+                            GENERATE<br />3-MINUTE<br />PITCH
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Subtitle Area */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6 mb-6">

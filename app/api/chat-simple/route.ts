@@ -133,6 +133,16 @@ export async function POST(request: NextRequest) {
       throw new Error('缺少音訊檔案')
     }
 
+    // 檢查檔案大小
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    if (audioFile.size > maxSize) {
+      return NextResponse.json({ 
+        error: '音訊檔案過大，請縮短錄音時間後重試' 
+      }, { status: 413 })
+    }
+
+    console.log(`📊 接收音訊檔案大小: ${(audioFile.size / 1024 / 1024).toFixed(2)}MB`)
+
     // 檢查 API Key
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ 

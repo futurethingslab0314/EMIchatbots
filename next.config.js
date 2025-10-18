@@ -12,6 +12,12 @@ const nextConfig = {
   async rewrites() {
     return []
   },
+  // 增加檔案大小限制
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
 }
 
 module.exports = nextConfig
