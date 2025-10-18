@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
         const totalImageSize = images.reduce((sum, img) => sum + img.length, 0)
         console.log(`📊 圖片總大小: ${(totalImageSize / 1024 / 1024).toFixed(2)}MB`)
         
-        // 如果圖片總大小超過 8MB，警告
-        if (totalImageSize > 8 * 1024 * 1024) {
-          console.warn('⚠️ 圖片總大小超過 8MB，可能導致請求失敗')
+        // 如果圖片總大小超過 16MB，警告
+        if (totalImageSize > 16 * 1024 * 1024) {
+          console.warn('⚠️ 圖片總大小超過 16MB，可能導致請求失敗')
         }
       }
     } catch (e) {

@@ -561,11 +561,11 @@ export default function Home() {
       const newImages: string[] = []
       
       Array.from(files).forEach((file) => {
-        // 檢查檔案大小（限制為 5MB）
-        const maxSize = 5 * 1024 * 1024 // 5MB
+        // 檢查檔案大小（限制為 8MB）
+        const maxSize = 8 * 1024 * 1024 // 8MB
         if (file.size > maxSize) {
           setPendingAudioUrl('')
-          setPendingAudioText(`圖片檔案過大（${(file.size / 1024 / 1024).toFixed(2)}MB），請選擇小於 5MB 的圖片`)
+          setPendingAudioText(`圖片檔案過大（${(file.size / 1024 / 1024).toFixed(2)}MB），請選擇小於 8MB 的圖片`)
           setShowAudioModal(true)
           return
         }
@@ -631,8 +631,8 @@ export default function Home() {
         const totalImageSize = uploadedImages.reduce((sum, img) => sum + img.length, 0)
         console.log(`📊 準備發送圖片總大小: ${(totalImageSize / 1024 / 1024).toFixed(2)}MB`)
         
-        if (totalImageSize > 8 * 1024 * 1024) {
-          throw new Error('圖片總大小超過 8MB，請減少圖片數量或選擇較小的圖片')
+        if (totalImageSize > 16 * 1024 * 1024) {
+          throw new Error('圖片總大小超過 16MB，請減少圖片數量或選擇較小的圖片')
         }
       }
       
