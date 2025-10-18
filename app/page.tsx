@@ -393,11 +393,15 @@ export default function Home() {
     setCurrentSubtitle(text)
 
     return new Promise<void>((resolve) => {
+      // 保存 resolve 函數到 ref，以便可以被 stopAudioPlayback 調用
+      pendingAudioResolveRef.current = resolve
+      
       // 檢查音頻 URL 是否有效
       if (!audioUrl || audioUrl === 'null' || audioUrl === 'undefined') {
         console.warn('⚠️ 音頻 URL 無效:', audioUrl)
         setIsSpeaking(false)
         setCurrentSubtitle('')
+        pendingAudioResolveRef.current = null
         resolve()
         return
       }
@@ -413,6 +417,7 @@ export default function Home() {
         setIsSpeaking(false)
         setCurrentSubtitle('')
         audio.remove()
+        pendingAudioResolveRef.current = null
         resolve()
       }
       
@@ -423,6 +428,7 @@ export default function Home() {
         setIsSpeaking(false)
         setCurrentSubtitle('')
         audio.remove()
+        pendingAudioResolveRef.current = null
         resolve()
       }
       
@@ -518,6 +524,7 @@ export default function Home() {
 
   // 停止音頻播放
   const stopAudioPlayback = () => {
+    console.log('🛑 停止音頻播放')
     setIsSpeaking(false)
     setCurrentSubtitle('')
     // 停止所有正在播放的音頻
@@ -525,7 +532,13 @@ export default function Home() {
     audioElements.forEach(audio => {
       audio.pause()
       audio.currentTime = 0
+      audio.remove()
     })
+    // 解決 pending 的 Promise
+    if (pendingAudioResolveRef.current) {
+      pendingAudioResolveRef.current()
+      pendingAudioResolveRef.current = null
+    }
   }
 
   // 處理圖片上傳
@@ -694,11 +707,14 @@ export default function Home() {
       
       
       case 'evaluation':
+        console.log('🔄 Step 7 → Step 8: 停止音頻並生成關鍵字提點')
         // 停止音頻播放
         stopAudioPlayback()
         // 生成關鍵字提點
         setCurrentStageWithLanguage('keywords')
+        console.log('🎬 觸發 keywords 階段')
         await triggerStageAction('keywords')
+        console.log('✅ keywords 階段觸發完成')
         break
       
       case 'keywords':
@@ -1577,6 +1593,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => {
+                        console.log('🔄 Step 8 → Practice: 停止音頻並進入練習')
                         // 停止音頻播放
                         stopAudioPlayback()
                         setCurrentStageWithLanguage('practice-pitch')
@@ -1588,6 +1605,7 @@ export default function Home() {
               </button>
               <button
                       onClick={() => {
+                        console.log('🔄 Step 8 → Restart: 停止音頻並重新開始')
                         // 停止音頻播放
                         stopAudioPlayback()
                         // 重新來過 - 重置所有狀態並回到上傳階段
