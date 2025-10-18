@@ -1064,7 +1064,7 @@ export default function Home() {
                         PITCH
                       </h1>
                       <p className="text-xl md:text-2xl lg:text-3xl text-white/50 uppercase tracking-wide">
-                        COACH
+                        COACH (建議使用電腦瀏覽器 recommend to use computer browser)
                       </p>
                     </div>
 
