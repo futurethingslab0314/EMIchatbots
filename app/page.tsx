@@ -517,6 +517,18 @@ export default function Home() {
     await playAudioDirectly(audioUrl, text)
   }
 
+  // 停止音頻播放
+  const stopAudioPlayback = () => {
+    setIsSpeaking(false)
+    setCurrentSubtitle('')
+    // 停止所有正在播放的音頻
+    const audioElements = document.querySelectorAll('audio')
+    audioElements.forEach(audio => {
+      audio.pause()
+      audio.currentTime = 0
+    })
+  }
+
   // 處理圖片上傳
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -683,6 +695,8 @@ export default function Home() {
       
       
       case 'evaluation':
+        // 停止音頻播放
+        stopAudioPlayback()
         // 生成關鍵字提點
         setCurrentStageWithLanguage('keywords')
         await triggerStageAction('keywords')
@@ -1052,19 +1066,19 @@ export default function Home() {
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       {uploadedImages.map((img, idx) => (
                         <div key={idx} className="relative group">
-                          <img
-                            src={img}
+                  <img
+                    src={img}
                             alt={`Work ${idx}`}
                             className="w-full aspect-square object-cover rounded-2xl"
-                          />
+                  />
                           {/* 刪除按鈕 */}
-                          <button
+                  <button
                             onClick={() => removeImage(idx)}
                             className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
-                          >
+                  >
                             <X className="w-4 h-4" />
-                          </button>
-                        </div>
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -1561,6 +1575,8 @@ export default function Home() {
               </button>
               <button
                 onClick={() => {
+                        // 停止音頻播放
+                        stopAudioPlayback()
                         setCurrentStageWithLanguage('practice-pitch')
                 }}
                 disabled={isProcessing || isSpeaking}
@@ -1570,6 +1586,8 @@ export default function Home() {
               </button>
               <button
                       onClick={() => {
+                        // 停止音頻播放
+                        stopAudioPlayback()
                         // 重新來過 - 重置所有狀態並回到上傳階段
                         setCurrentStageWithLanguage('upload')
                         setMessages([])
