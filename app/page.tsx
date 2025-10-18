@@ -346,8 +346,8 @@ export default function Home() {
           setSubtitleHistory(prev => [...prev, transcription])
         }
         setSubtitleHistory(prev => [...prev, reply])
-        // 不等待音頻播放完成，避免在手機 Safari 中卡住
-        playAudioWithSubtitles(audioUrl, reply)
+        // 播放音頻並顯示字幕
+        await playAudioWithSubtitles(audioUrl, reply)
       }
       // --- 修正結束 ---
     } catch (error) {
@@ -397,7 +397,10 @@ export default function Home() {
         console.warn('⚠️ 音頻 URL 無效:', audioUrl)
         setIsSpeaking(false)
         setCurrentSubtitle('')
-        pendingAudioResolveRef.current = null
+        if (pendingAudioResolveRef.current) {
+          pendingAudioResolveRef.current()
+          pendingAudioResolveRef.current = null
+        }
         resolve()
         return
       }
@@ -413,7 +416,10 @@ export default function Home() {
         setIsSpeaking(false)
         setCurrentSubtitle('')
         audio.remove()
-        pendingAudioResolveRef.current = null
+        if (pendingAudioResolveRef.current) {
+          pendingAudioResolveRef.current()
+          pendingAudioResolveRef.current = null
+        }
         resolve()
       }
       
@@ -424,7 +430,10 @@ export default function Home() {
         setIsSpeaking(false)
         setCurrentSubtitle('')
         audio.remove()
-        pendingAudioResolveRef.current = null
+        if (pendingAudioResolveRef.current) {
+          pendingAudioResolveRef.current()
+          pendingAudioResolveRef.current = null
+        }
         resolve()
       }
       
@@ -481,14 +490,22 @@ export default function Home() {
                 }
               } else if (error.name === 'NotSupportedError') {
                 console.warn('⚠️ 音頻格式不支援，跳過播放')
-                    setIsSpeaking(false)
-                    setCurrentSubtitle('')
-                    audio.remove()
-                    resolve()
+                setIsSpeaking(false)
+                setCurrentSubtitle('')
+                audio.remove()
+                if (pendingAudioResolveRef.current) {
+                  pendingAudioResolveRef.current()
+                  pendingAudioResolveRef.current = null
+                }
+                resolve()
               } else {
                 setIsSpeaking(false)
                 setCurrentSubtitle('')
                 audio.remove()
+                if (pendingAudioResolveRef.current) {
+                  pendingAudioResolveRef.current()
+                  pendingAudioResolveRef.current = null
+                }
                 resolve()
               }
             })
@@ -667,6 +684,12 @@ export default function Home() {
         // 將新的字幕添加到歷史記錄中
         setSubtitleHistory(prev => [...prev, reply])
         await playAudioWithSubtitles(audioUrl, reply)
+      }
+      
+      // 針對 free-description 階段，確保狀態被正確重置
+      if (stage === 'free-description') {
+        setIsSpeaking(false)
+        setIsProcessing(false)
       }
     } catch (error: any) {
       console.error('觸發階段動作時發生錯誤:', error)
