@@ -1102,12 +1102,14 @@ export default function Home() {
                   />
 
                   {uploadedImages.length > 0 && (
-                    <button
-                      onClick={handleStageButton}
-                      className="w-full py-4 md:py-5 bg-black text-white rounded-full text-lg md:text-xl uppercase tracking-wide"
-                    >
-                      Start Practice
-                    </button>
+                    <div className="mt-8">
+                      <button
+                        onClick={handleStageButton}
+                        className="w-full py-4 md:py-5 bg-black text-white rounded-full text-lg md:text-xl uppercase tracking-wide"
+                      >
+                        Start Practice
+                      </button>
+                    </div>
                   )}
                         </div>
               )}
