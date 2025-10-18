@@ -193,6 +193,14 @@ export default function Home() {
   // 開始錄音
   const startRecording = async () => {
     try {
+      console.log('🎤 開始錄音，當前狀態:', { isSpeaking, isProcessing, currentStage })
+      
+      // 如果 AI 還在說話，先停止
+      if (isSpeaking) {
+        console.log('⚠️ AI 還在說話，先停止音頻')
+        stopAudioPlayback()
+      }
+      
       // 解鎖音頻播放（Safari 需要）
       await unlockAudio()
       
@@ -1302,17 +1310,17 @@ export default function Home() {
                   <div className="w-full flex flex-col items-center gap-3">
                     <button
                       onClick={
-                        (currentStage === 'free-description' && isSpeaking) || isProcessing
+                        isProcessing
                           ? undefined
                           : isRecording
                           ? stopRecording
                           : startRecording
                       }
-                      disabled={(currentStage === 'free-description' && isSpeaking) || isProcessing}
+                      disabled={isProcessing}
                       className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all ${
                         isRecording
                           ? 'bg-black text-white'
-                          : (currentStage === 'free-description' && isSpeaking) || isProcessing
+                          : isProcessing
                             ? 'bg-black/20 text-black/40 cursor-not-allowed'
                             : 'bg-black text-white hover:scale-105'
                       }`}
@@ -1320,7 +1328,7 @@ export default function Home() {
                       <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/20"></div>
                     </button>
 
-                    {!isProcessing && !(currentStage === 'free-description' && isSpeaking) && (
+                    {!isProcessing && (
                         <div className="text-xs md:text-sm text-black/50 text-center uppercase tracking-wide">
                           <p>Microphone permission needed</p>
                           <p>Tap button to enable</p>
