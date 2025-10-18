@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 import { motion, AnimatePresence } from 'motion/react'
-import { Camera, Image as ImageIcon, Mic, MicOff, Volume2 } from 'lucide-react'
+import { Camera, Image as ImageIcon, Mic, MicOff, Volume2, X } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant' | 'system'
@@ -1051,12 +1051,20 @@ export default function Home() {
           {uploadedImages.length > 0 && (
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       {uploadedImages.map((img, idx) => (
-                  <img
-                          key={idx}
-                    src={img}
-                          alt={`Work ${idx}`}
-                          className="w-full aspect-square object-cover rounded-2xl"
-                        />
+                        <div key={idx} className="relative group">
+                          <img
+                            src={img}
+                            alt={`Work ${idx}`}
+                            className="w-full aspect-square object-cover rounded-2xl"
+                          />
+                          {/* 刪除按鈕 */}
+                          <button
+                            onClick={() => removeImage(idx)}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
               ))}
             </div>
           )}
