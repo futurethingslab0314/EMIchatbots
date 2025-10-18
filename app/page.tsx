@@ -1067,7 +1067,10 @@ export default function Home() {
                         COACH
                       </p>
                       <p className="text-sm md:text-base text-white/60 uppercase tracking-wide">
-                      (建議使用電腦瀏覽器 recommend to use computer browser)</p>
+                      (請使用電腦瀏覽器） 
+                      <br /> 
+                      (Recommend to use computer browser)
+                      </p>
                     </div>
 
                     {/* Dot Pattern Visualization */}
