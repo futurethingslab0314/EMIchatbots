@@ -307,7 +307,7 @@ export default function Home() {
       if (nextStage) {
         setCurrentStageWithLanguage(nextStage)
         
-        // 只有特定階段轉換才自動觸發 AI 回應
+        // 自動觸發邏輯（只在 processAudio 中保留）
         if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
             (currentStage === 'qa-improve' && nextStage === 'confirm-summary')) {
           setTimeout(async () => {
@@ -558,15 +558,6 @@ export default function Home() {
       // 更新階段
       if (nextStage) {
         setCurrentStageWithLanguage(nextStage)
-        
-        // 只有特定階段轉換才自動觸發 AI 回應
-        if ((currentStage === 'free-description' && nextStage === 'qa-improve') ||
-            (currentStage === 'qa-improve' && nextStage === 'confirm-summary')) {
-          setTimeout(async () => {
-            // 使用 nextStage 作為觸發的階段，而不是 currentStage
-            await triggerStageAction(nextStage)
-          }, 500) // 稍微延遲，確保狀態更新完成
-        }
       }
 
       // 儲存生成的 pitch
@@ -664,6 +655,7 @@ export default function Home() {
       
       case 'evaluation':
         // 生成關鍵字提點
+        setCurrentStageWithLanguage('keywords')
         await triggerStageAction('keywords')
         break
       
@@ -1410,7 +1402,6 @@ export default function Home() {
                 <div className="flex-1 flex flex-col justify-between pb-4">
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center space-y-6">
-                      <div className="text-6xl md:text-7xl text-black/20">📊</div>
                       <div className="space-y-2">
                         <h2 className="text-2xl md:text-3xl text-black">評分處理中...</h2>
                         <p className="text-sm md:text-base text-black/60">正在分析您的表現</p>
