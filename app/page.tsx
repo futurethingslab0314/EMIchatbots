@@ -301,7 +301,8 @@ export default function Home() {
 
       // --- 修正開始：避免 AI 講話兩次 ---
       // 判斷是否即將進入自動觸發 AI 提問的階段
-      const shouldSuppressCurrentReply = nextStage === 'qa-improve' || nextStage === 'confirm-summary' || nextStage === 'evaluation'
+      // 注意：free-description → qa-improve 不壓制，讓 Step 2 正常播放完成
+      const shouldSuppressCurrentReply = nextStage === 'confirm-summary' || nextStage === 'evaluation'
 
       // 更新階段
       if (nextStage) {
@@ -311,6 +312,9 @@ export default function Home() {
         if (shouldSuppressCurrentReply) { // 僅在壓制了當前語音時，才自動觸發下一階段的引導語
           // 使用一個短延遲，確保 state 已更新，然後觸發下一階段的 AI 講話 (AI 語音 2)
           setTimeout(() => triggerStageAction(nextStage), 50) 
+        } else if (nextStage === 'qa-improve') {
+          // free-description → qa-improve：不自動觸發，等待用戶手動錄音
+          // 只是更新階段，不觸發 AI 回應
         }
       }
 
