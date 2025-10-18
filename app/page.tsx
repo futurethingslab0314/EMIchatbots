@@ -515,12 +515,13 @@ export default function Home() {
 
   // 停止音頻播放
   const stopAudioPlayback = () => {
-    console.log('🛑 停止音頻播放')
+    console.log('🛑 停止音頻播放，當前 isSpeaking:', isSpeaking)
     setIsSpeaking(false)
     setCurrentSubtitle('')
     // 停止所有正在播放的音頻
     const audioElements = document.querySelectorAll('audio')
     audioElements.forEach(audio => {
+      console.log('🛑 停止音頻元素:', audio.src)
       audio.pause()
       audio.currentTime = 0
       audio.remove()
@@ -530,6 +531,7 @@ export default function Home() {
       pendingAudioResolveRef.current()
       pendingAudioResolveRef.current = null
     }
+    console.log('✅ 音頻播放已停止，isSpeaking 設為 false')
   }
 
   // 處理圖片上傳
@@ -717,6 +719,15 @@ export default function Home() {
           setShowAudioModal(true)
           return
         }
+        
+        // 在用戶點擊時立即請求音頻權限（Safari 要求）
+        try {
+          await requestAudioPermissions()
+          console.log('✅ Safari 音頻權限已獲得')
+        } catch (error) {
+          console.warn('⚠️ Safari 音頻權限請求失敗:', error)
+        }
+        
         setCurrentStageWithLanguage('free-description')
         // 自動觸發 AI 引導用戶進行 Free Share
         await triggerStageAction('free-description')
@@ -1163,7 +1174,17 @@ export default function Home() {
                   {uploadedImages.length > 0 && (
                     <div className="mt-8">
                       <button
-                        onClick={handleStageButton}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          console.log('🔘 Safari 按鈕點擊')
+                          handleStageButton()
+                        }}
+                        style={{
+                          WebkitTouchCallout: 'none',
+                          WebkitUserSelect: 'none',
+                          touchAction: 'manipulation'
+                        }}
                         className="w-full py-4 md:py-5 bg-black text-white rounded-full text-lg md:text-xl uppercase tracking-wide"
                       >
                         Start Practice
