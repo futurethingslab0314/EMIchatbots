@@ -1033,6 +1033,7 @@ export default function Home() {
                   </div>
 
                   {/* Start Button */}
+                  <div className="mt-12">
                   <motion.button
                     onClick={handleStageButton}
                     className="w-full py-5 md:py-6 bg-white text-black rounded-none text-lg md:text-xl uppercase tracking-widest border-4 border-white hover:bg-white/90 transition-colors"
@@ -1040,6 +1041,7 @@ export default function Home() {
                   >
                     START
                   </motion.button>
+                  </div>
                     </div>
               )}
 
