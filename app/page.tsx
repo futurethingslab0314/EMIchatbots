@@ -1270,23 +1270,23 @@ export default function Home() {
                           }}
                         />
                         <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
-                      </div>
-                    </div>
+                            </div>
+                            </div>
                   ) : (
                     // 顯示正常內容
                     <div className="flex-1 flex items-center justify-center">
                       <div className="text-center space-y-6">
                         <div className="w-24 h-24 md:w-32 md:h-32 mx-auto border-4 border-black rounded-full flex items-center justify-center">
                           <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full"></div>
-                        </div>
-                        <div>
+                          </div>
+                          <div>
                           <p className="text-sm md:text-base text-black/60 uppercase tracking-wide mb-2">READY</p>
                           <p className="text-3xl md:text-4xl lg:text-5xl text-black uppercase tracking-tight leading-tight">
                             GENERATE<br />3-MINUTE<br />PITCH
                           </p>
-                        </div>
-                      </div>
-                    </div>
+                            </div>
+                            </div>
+                          </div>
                   )}
 
                   {/* Subtitle Area */}
@@ -1462,8 +1462,8 @@ export default function Home() {
                           }}
                         />
                         <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
-                      </div>
-                    </div>
+              </div>
+            </div>
                   ) : (
                     // 顯示正常內容
                     <div className="flex-1 flex items-center justify-center">
@@ -1471,11 +1471,11 @@ export default function Home() {
                         <div className="space-y-2">
                           <h2 className="text-2xl md:text-3xl text-black">EVALUATING...</h2>
                           <p className="text-sm md:text-base text-black/60">正在分析您的表現</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
+          </div>
+              </div>
+              </div>
+            )}
+            
                   {/* 字幕區域 */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6">
                     <div className="space-y-2">
@@ -1515,8 +1515,8 @@ export default function Home() {
                       <div className="p-4 bg-black/10 rounded-2xl">
                         <p className="text-sm md:text-base text-black whitespace-pre-wrap">
                           {messages[messages.length - 1].content}
-                        </p>
-                      </div>
+                    </p>
+                  </div>
                     )}
                     {/* 如果正在處理且沒有內容，顯示 Thinking... 動畫 */}
                     {isProcessing && (!messages.length || !messages[messages.length - 1]?.content) && (
@@ -1532,33 +1532,33 @@ export default function Home() {
                             }}
                           />
                           <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                </div>
+            </div>
+          )}
+        </div>
 
                   <div className="grid grid-cols-3 gap-3 mt-4">
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
                         setPendingAudioUrl('')
                         setPendingAudioText('✅ 已複製到剪貼簿！')
                         setShowAudioModal(true)
-                      }}
+                }}
                       className="py-3 md:py-4 bg-black/10 text-black rounded-full uppercase tracking-wide text-sm md:text-base"
-                    >
+              >
                       Copy
-                    </button>
-                    <button
-                      onClick={() => {
+              </button>
+              <button
+                onClick={() => {
                         setCurrentStageWithLanguage('practice-pitch')
-                      }}
-                      disabled={isProcessing || isSpeaking}
+                }}
+                disabled={isProcessing || isSpeaking}
                       className="py-3 md:py-4 bg-black text-white rounded-full uppercase tracking-wide text-sm md:text-base"
-                    >
+              >
                       Practice
-                    </button>
-                    <button
+              </button>
+              <button
                       onClick={() => {
                         // 重新來過 - 重置所有狀態並回到上傳階段
                         setCurrentStageWithLanguage('upload')
@@ -1570,12 +1570,12 @@ export default function Home() {
                         setSubtitleHistory([])
                         setUploadedImages([])
                       }}
-                      disabled={isProcessing || isSpeaking}
+                disabled={isProcessing || isSpeaking}
                       className="py-3 md:py-4 bg-orange-500 text-white rounded-full uppercase tracking-wide text-sm md:text-base"
-                    >
+              >
                       Restart
-                    </button>
-                  </div>
+              </button>
+            </div>
           </div>
         )}
 
