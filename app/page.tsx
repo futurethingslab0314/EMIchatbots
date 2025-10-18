@@ -1534,33 +1534,34 @@ export default function Home() {
               {/* View Notes Step */}
               {currentStage === 'keywords' && (
                 <div className="flex-1 flex flex-col justify-between">
-                  {/* 顯示內容 - 無論是否在處理都顯示 */}
-                  <div className="flex-1 overflow-y-auto space-y-3">
-                    {messages.length > 0 && messages[messages.length - 1]?.content && (
-                      <div className="p-4 bg-black/10 rounded-2xl">
-                        <p className="text-sm md:text-base text-black whitespace-pre-wrap">
-                          {messages[messages.length - 1].content}
-                    </p>
-                  </div>
-                    )}
-                    {/* 如果正在處理且沒有內容，顯示 Thinking... 動畫 */}
-                    {isProcessing && (!messages.length || !messages[messages.length - 1]?.content) && (
-                      <div className="flex-1 flex items-center justify-center">
-                        <div className="text-center">
-                          <motion.div
-                            className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
-                            animate={{ rotate: 360 }}
-                            transition={{
-                              duration: 0.8,
-                              repeat: Infinity,
-                              ease: [0.4, 0, 0.2, 1],
-                            }}
-                          />
-                          <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
-                </div>
-            </div>
-          )}
-        </div>
+                  {isProcessing && (!messages.length || !messages[messages.length - 1]?.content) ? (
+                    // 顯示 Thinking... 動畫
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center">
+                        <motion.div
+                          className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 0.8,
+                            repeat: Infinity,
+                            ease: [0.4, 0, 0.2, 1],
+                          }}
+                        />
+                        <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    // 顯示內容
+                    <div className="flex-1 overflow-y-auto space-y-3">
+                      {messages.length > 0 && messages[messages.length - 1]?.content && (
+                        <div className="p-4 bg-black/10 rounded-2xl">
+                          <p className="text-sm md:text-base text-black whitespace-pre-wrap">
+                            {messages[messages.length - 1].content}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-3 gap-3 mt-4">
               <button
@@ -1580,7 +1581,7 @@ export default function Home() {
                         stopAudioPlayback()
                         setCurrentStageWithLanguage('practice-pitch')
                 }}
-                disabled={isProcessing || isSpeaking}
+                disabled={isProcessing}
                       className="py-3 md:py-4 bg-black text-white rounded-full uppercase tracking-wide text-sm md:text-base"
               >
                       Practice
@@ -1599,7 +1600,7 @@ export default function Home() {
                         setSubtitleHistory([])
                         setUploadedImages([])
                       }}
-                disabled={isProcessing || isSpeaking}
+                disabled={isProcessing}
                       className="py-3 md:py-4 bg-orange-500 text-white rounded-full uppercase tracking-wide text-sm md:text-base"
               >
                       Restart
