@@ -125,27 +125,10 @@ export default function Home() {
       oscillator.start()
       oscillator.stop(audioContextRef.current.currentTime + 0.01)
       
-      // 4. 測試音訊播放權限
-      const testAudio = new Audio()
-      testAudio.setAttribute('playsinline', '')
-      testAudio.setAttribute('webkit-playsinline', '')
+      // 4. 使用 oscillator 已經足夠解鎖音訊系統
+      // 不需要額外的測試音頻播放
       
-      // 創建一個短暫的無聲音頻數據
-      const audioBuffer = audioContextRef.current.createBuffer(1, 1, 44100)
-      const audioData = audioBuffer.getChannelData(0)
-      
-      // 創建一個簡單的無聲音頻 blob
-      const audioBlob = new Blob([audioData.buffer], { type: 'audio/wav' })
-      const audioUrl = URL.createObjectURL(audioBlob)
-      
-      testAudio.src = audioUrl
-      await testAudio.play()
-      
-      // 清理
-      URL.revokeObjectURL(audioUrl)
-      testAudio.remove()
-      
-      console.log('✅ 音訊權限已獲得')
+      console.log('✅ 音訊系統已解鎖')
       setAudioPermissionsGranted(true)
       setAudioUnlocked(true)
       return true
