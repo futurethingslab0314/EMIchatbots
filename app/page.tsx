@@ -312,17 +312,6 @@ export default function Home() {
       // 判斷是否即將進入自動觸發 AI 提問的階段
       const shouldSuppressCurrentReply = nextStage === 'qa-improve' || nextStage === 'confirm-summary' || nextStage === 'evaluation'
 
-      // 訊息內容：如果壓制，使用一個過渡提示；否則使用實際回覆
-      const assistantContent = shouldSuppressCurrentReply ? '系統正在進入下一階段...' : reply
-
-      // 添加助理回覆到歷史紀錄
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: assistantContent,
-        timestamp: new Date(),
-      }
-      setMessages(prev => [...prev, assistantMessage])
-
       // 更新階段
       if (nextStage) {
         setCurrentStageWithLanguage(nextStage)
@@ -332,6 +321,16 @@ export default function Home() {
           // 使用一個短延遲，確保 state 已更新，然後觸發下一階段的 AI 講話 (AI 語音 2)
           setTimeout(() => triggerStageAction(nextStage), 50) 
         }
+      }
+
+      // 添加助理回覆到歷史紀錄（只有在沒有壓制的情況下才添加）
+      if (!shouldSuppressCurrentReply) {
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: reply,
+          timestamp: new Date(),
+        }
+        setMessages(prev => [...prev, assistantMessage])
       }
 
       // 儲存生成的 pitch
@@ -1630,7 +1629,7 @@ export default function Home() {
               </h3>
               
               <p className="text-gray-600 mb-6 leading-relaxed text-sm md:text-base">
-                {pendingAudioText || '請點擊「確定」以播放語音回覆 / Please click "OK" to play audio'}
+                請點擊「確定」以播放語音回覆 / Please click "OK" to play audio
               </p>
               
               <div className="flex space-x-4 justify-center">
