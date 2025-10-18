@@ -310,10 +310,10 @@ export default function Home() {
 
       // --- 修正開始：避免 AI 講話兩次 ---
       // 判斷是否即將進入自動觸發 AI 提問的階段
-      const shouldSuppressCurrentReply = nextStage === 'qa-improve' || nextStage === 'confirm-summary'
+      const shouldSuppressCurrentReply = nextStage === 'qa-improve' || nextStage === 'confirm-summary' || nextStage === 'evaluation'
 
       // 訊息內容：如果壓制，使用一個過渡提示；否則使用實際回覆
-      const assistantContent = shouldSuppressCurrentReply ? '系統正在進入下一階段：追問細節...' : reply
+      const assistantContent = shouldSuppressCurrentReply ? '系統正在進入下一階段...' : reply
 
       // 添加助理回覆到歷史紀錄
       const assistantMessage: Message = {
@@ -1438,14 +1438,33 @@ export default function Home() {
               {/* View Scores Step - Fallback when scores not parsed */}
               {currentStage === 'evaluation' && !evaluationScores && (
                 <div className="flex-1 flex flex-col justify-between pb-4">
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center space-y-6">
-                      <div className="space-y-2">
-                        <h2 className="text-2xl md:text-3xl text-black">評分處理中...</h2>
-                        <p className="text-sm md:text-base text-black/60">正在分析您的表現</p>
-            </div>
-          </div>
-              </div>
+                  {isProcessing ? (
+                    // 顯示 Thinking... 動畫
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center">
+                        <motion.div
+                          className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 0.8,
+                            repeat: Infinity,
+                            ease: [0.4, 0, 0.2, 1],
+                          }}
+                        />
+                        <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    // 顯示正常內容
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center space-y-6">
+                        <div className="space-y-2">
+                          <h2 className="text-2xl md:text-3xl text-black">EVALUATING...</h2>
+                          <p className="text-sm md:text-base text-black/60">正在分析您的表現</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* 字幕區域 */}
                   <div className="w-full min-h-[80px] md:min-h-[100px] bg-black/10 rounded-3xl p-4 md:p-6">
