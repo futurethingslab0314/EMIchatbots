@@ -1477,28 +1477,45 @@ export default function Home() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
+                  <div className="grid grid-cols-3 gap-3 mt-4">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
                         setPendingAudioUrl('')
                         setPendingAudioText('✅ 已複製到剪貼簿！')
                         setShowAudioModal(true)
-                }}
+                      }}
                       className="py-3 md:py-4 bg-black/10 text-black rounded-full uppercase tracking-wide text-sm md:text-base"
-              >
+                    >
                       Copy
-              </button>
-              <button
-                onClick={() => {
-                  setCurrentStageWithLanguage('practice-pitch')
-                }}
-                disabled={isProcessing || isSpeaking}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentStageWithLanguage('practice-pitch')
+                      }}
+                      disabled={isProcessing || isSpeaking}
                       className="py-3 md:py-4 bg-black text-white rounded-full uppercase tracking-wide text-sm md:text-base"
                     >
                       Practice
-              </button>
-            </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        // 重新來過 - 重置所有狀態並回到上傳階段
+                        setCurrentStageWithLanguage('upload')
+                        setMessages([])
+                        setGeneratedPitch('')
+                        setEvaluationScores(null)
+                        setUserTranscript('')
+                        setCurrentSubtitle('')
+                        setSubtitleHistory([])
+                        setUploadedImages([])
+                      }}
+                      disabled={isProcessing || isSpeaking}
+                      className="py-3 md:py-4 bg-orange-500 text-white rounded-full uppercase tracking-wide text-sm md:text-base"
+                    >
+                      Restart
+                    </button>
+                  </div>
           </div>
         )}
 
