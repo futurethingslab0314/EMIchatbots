@@ -866,9 +866,9 @@ export default function Home() {
       console.log('🔍 開始解析評分數據...')
       console.log('📝 AI 回應內容:', response)
       
-      // 嘗試解析評分（尋找數字格式）
+      // 嘗試解析評分（尋找數字格式，支援 N/A 情況）
       const originalityMatch = response.match(/Originality[：:]\s*(\d+)(?:\/20)?/i) || response.match(/原創性[）：]*\s*(\d+)/)
-      const pronunciationMatch = response.match(/Pronunciation[：:]\s*(\d+)(?:\/20)?/i) || response.match(/發音[清晰度）：]*\s*(\d+)/)
+      const pronunciationMatch = response.match(/Pronunciation[：:]\s*(\d+)(?:\/20)?/i) || response.match(/發音[清晰度）：]*\s*(\d+)/) || response.match(/Pronunciation[：:]\s*N\/A/i)
       const engagingMatch = response.match(/Engaging Tone[：:]\s*(\d+)(?:\/20)?/i) || response.match(/表達吸引力[）：]*\s*(\d+)/)
       const contentMatch = response.match(/Content Delivery[：:]\s*(\d+)(?:\/20)?/i) || response.match(/內容表達[）：]*\s*(\d+)/)
       const timeMatch = response.match(/Time Management[：:]\s*(\d+)(?:\/20)?/i) || response.match(/時間[掌控）：]*\s*(\d+)/)
@@ -881,10 +881,10 @@ export default function Home() {
         time: timeMatch?.[1]
       })
 
-      if (originalityMatch && pronunciationMatch && engagingMatch && contentMatch && timeMatch) {
+      if (originalityMatch && engagingMatch && contentMatch && timeMatch) {
         const scores = {
           originality: parseInt(originalityMatch[1]),
-          pronunciation: parseInt(pronunciationMatch[1]),
+          pronunciation: pronunciationMatch && pronunciationMatch[1] ? parseInt(pronunciationMatch[1]) : 0, // N/A 時設為 0
           engagingTone: parseInt(engagingMatch[1]),
           contentDelivery: parseInt(contentMatch[1]),
           timeManagement: parseInt(timeMatch[1]),
@@ -1499,34 +1499,33 @@ export default function Home() {
               {/* View Notes Step */}
               {currentStage === 'keywords' && (
                 <div className="flex-1 flex flex-col justify-between">
-                  {isProcessing ? (
-                    // 顯示 Thinking... 動畫
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className="text-center">
-                        <motion.div
-                          className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
-                          animate={{ rotate: 360 }}
-                          transition={{
-                            duration: 0.8,
-                            repeat: Infinity,
-                            ease: [0.4, 0, 0.2, 1],
-                          }}
-                        />
-                        <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
+                  {/* 顯示內容 - 無論是否在處理都顯示 */}
+                  <div className="flex-1 overflow-y-auto space-y-3">
+                    {messages.length > 0 && messages[messages.length - 1]?.content && (
+                      <div className="p-4 bg-black/10 rounded-2xl">
+                        <p className="text-sm md:text-base text-black whitespace-pre-wrap">
+                          {messages[messages.length - 1].content}
+                        </p>
                       </div>
-                    </div>
-                  ) : (
-                    // 顯示內容
-                    <div className="flex-1 overflow-y-auto space-y-3">
-                      {messages.length > 0 && messages[messages.length - 1]?.content && (
-                        <div className="p-4 bg-black/10 rounded-2xl">
-                          <p className="text-sm md:text-base text-black whitespace-pre-wrap">
-                            {messages[messages.length - 1].content}
-                          </p>
+                    )}
+                    {/* 如果正在處理且沒有內容，顯示 Thinking... 動畫 */}
+                    {isProcessing && (!messages.length || !messages[messages.length - 1]?.content) && (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                          <motion.div
+                            className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              duration: 0.8,
+                              repeat: Infinity,
+                              ease: [0.4, 0, 0.2, 1],
+                            }}
+                          />
+                          <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
                         </div>
-                      )}
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-3 gap-3 mt-4">
                     <button
