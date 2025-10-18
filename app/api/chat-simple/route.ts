@@ -97,14 +97,19 @@ export async function POST(request: NextRequest) {
 
       console.log(`✅ 階段回應生成完成 ${shouldSendImages ? '（含圖片分析）' : '（純文字）'}`)
 
-      // 生成語音
-      const speech = await openai.audio.speech.create({
+    // 生成語音（添加超時處理）
+    const speech = await Promise.race([
+      openai.audio.speech.create({
         model: 'tts-1',
         voice: 'nova',
         input: reply,
         speed: 0.95,
         response_format: 'mp3', // 明確指定格式
-      })
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Speech generation timeout')), 15000)
+      )
+    ]) as any
 
       const audioBuffer = Buffer.from(await speech.arrayBuffer())
       const audioBase64 = audioBuffer.toString('base64')
@@ -186,14 +191,19 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ 對話回應完成 ${shouldSendImages ? '（含圖片）' : '（純文字）'}`)
 
-    // 生成語音
-    const speech = await openai.audio.speech.create({
-      model: 'tts-1',
-      voice: 'nova',
-      input: assistantReply,
-      speed: 0.95,
-      response_format: 'mp3', // 明確指定格式
-    })
+    // 生成語音（添加超時處理）
+    const speech = await Promise.race([
+      openai.audio.speech.create({
+        model: 'tts-1',
+        voice: 'nova',
+        input: assistantReply,
+        speed: 0.95,
+        response_format: 'mp3', // 明確指定格式
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Speech generation timeout')), 15000)
+      )
+    ]) as any
 
     const audioBuffer = Buffer.from(await speech.arrayBuffer())
     const audioBase64 = audioBuffer.toString('base64')
@@ -231,12 +241,16 @@ export async function POST(request: NextRequest) {
     
     if (error.message?.includes('API key')) {
       errorMessage = 'OpenAI API Key 設定錯誤，請檢查環境變數'
+    } else if (error.message?.includes('timeout') || error.message?.includes('Speech generation timeout')) {
+      errorMessage = '語音生成超時，請稍後再試'
     } else if (error.message?.includes('quota')) {
       errorMessage = 'OpenAI API 配額不足，請檢查帳戶餘額'
     } else if (error.message?.includes('model')) {
       errorMessage = 'AI 模型呼叫失敗，請稍後再試'
     } else if (error.message?.includes('音訊')) {
       errorMessage = '語音處理失敗，請重新錄音'
+    } else if (error.message?.includes('504')) {
+      errorMessage = '伺服器處理超時，請重新嘗試'
     }
     
     return NextResponse.json(

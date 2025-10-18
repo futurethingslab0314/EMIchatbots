@@ -595,10 +595,20 @@ export default function Home() {
         setSubtitleHistory(prev => [...prev, reply])
         await playAudioWithSubtitles(audioUrl, reply)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('觸發階段動作時發生錯誤:', error)
+      
+      let errorMessage = '處理時發生錯誤，請稍後再試'
+      if (error.response?.status === 504) {
+        errorMessage = '伺服器處理超時，請重新嘗試'
+      } else if (error.message?.includes('timeout')) {
+        errorMessage = '請求超時，請稍後再試'
+      } else if (error.response?.status === 413) {
+        errorMessage = '音訊檔案過大，請縮短錄音時間'
+      }
+      
       setPendingAudioUrl('')
-      setPendingAudioText('處理時發生錯誤，請稍後再試')
+      setPendingAudioText(errorMessage)
       setShowAudioModal(true)
     } finally {
       setIsProcessing(false)
