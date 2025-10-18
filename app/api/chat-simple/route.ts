@@ -60,6 +60,14 @@ export async function POST(request: NextRequest) {
       if (imagesStr) {
         images = JSON.parse(imagesStr)
         console.log(`📸 收到 ${images.length} 張圖片`)
+        // 檢查圖片總大小
+        const totalImageSize = images.reduce((sum, img) => sum + img.length, 0)
+        console.log(`📊 圖片總大小: ${(totalImageSize / 1024 / 1024).toFixed(2)}MB`)
+        
+        // 如果圖片總大小超過 8MB，警告
+        if (totalImageSize > 8 * 1024 * 1024) {
+          console.warn('⚠️ 圖片總大小超過 8MB，可能導致請求失敗')
+        }
       }
     } catch (e) {
       images = []

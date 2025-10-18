@@ -548,13 +548,56 @@ export default function Home() {
       const newImages: string[] = []
       
       Array.from(files).forEach((file) => {
+        // 檢查檔案大小（限制為 5MB）
+        const maxSize = 5 * 1024 * 1024 // 5MB
+        if (file.size > maxSize) {
+          setPendingAudioUrl('')
+          setPendingAudioText(`圖片檔案過大（${(file.size / 1024 / 1024).toFixed(2)}MB），請選擇小於 5MB 的圖片`)
+          setShowAudioModal(true)
+          return
+        }
+        
+        // 壓縮圖片
+        const img = new Image()
         const reader = new FileReader()
-        reader.onloadend = () => {
-          newImages.push(reader.result as string)
-          if (newImages.length === files.length) {
-            setUploadedImages(prev => [...prev, ...newImages])
+        
+        reader.onload = (e) => {
+          img.src = e.target?.result as string
+          
+          img.onload = () => {
+            const canvas = document.createElement('canvas')
+            let width = img.width
+            let height = img.height
+            
+            // 限制最大尺寸為 1200px
+            const maxDimension = 1200
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = (height / width) * maxDimension
+                width = maxDimension
+              } else {
+                width = (width / height) * maxDimension
+                height = maxDimension
+              }
+            }
+            
+            canvas.width = width
+            canvas.height = height
+            
+            const ctx = canvas.getContext('2d')
+            ctx?.drawImage(img, 0, 0, width, height)
+            
+            // 壓縮為 JPEG，品質 0.8
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8)
+            console.log(`📊 圖片壓縮: ${(file.size / 1024).toFixed(0)}KB → ${(compressedDataUrl.length * 0.75 / 1024).toFixed(0)}KB`)
+            
+            newImages.push(compressedDataUrl)
+            if (newImages.length === files.length) {
+              setUploadedImages(prev => [...prev, ...newImages])
+            }
           }
         }
+        
         reader.readAsDataURL(file)
       })
     }
@@ -570,6 +613,16 @@ export default function Home() {
     setIsProcessing(true)
     
     try {
+      // 檢查圖片總大小
+      if (uploadedImages.length > 0) {
+        const totalImageSize = uploadedImages.reduce((sum, img) => sum + img.length, 0)
+        console.log(`📊 準備發送圖片總大小: ${(totalImageSize / 1024 / 1024).toFixed(2)}MB`)
+        
+        if (totalImageSize > 8 * 1024 * 1024) {
+          throw new Error('圖片總大小超過 8MB，請減少圖片數量或選擇較小的圖片')
+        }
+      }
+      
       const formData = new FormData()
       const emptyAudio = new Blob([new Uint8Array(0)], { type: 'audio/webm' })
       formData.append('audio', emptyAudio, 'empty.webm')
@@ -1647,35 +1700,53 @@ export default function Home() {
                 {pendingAudioUrl ? '音頻播放確認 / Audio Playback Confirmation' : '通知 / Notification'}
               </h3>
               
-              <p className="text-gray-600 mb-6 leading-relaxed text-sm md:text-base">
-                請點擊「確定」以播放語音回覆 / Please click "OK" to play audio
+              <p className="text-gray-600 mb-6 leading-relaxed text-sm md:text-base whitespace-pre-wrap">
+                {pendingAudioUrl 
+                  ? '請點擊「確定」以播放語音回覆 / Please click "OK" to play audio'
+                  : pendingAudioText || '發生錯誤，請稍後再試'
+                }
               </p>
               
               <div className="flex space-x-4 justify-center">
-              <button
-                onClick={() => {
-                    setShowAudioModal(false)
-                    setPendingAudioUrl(null)
-                    setPendingAudioText('')
-                    // 如果用戶取消，也要重置音頻狀態
-                    setIsSpeaking(false)
-                    setCurrentSubtitle('')
-                    // 調用 resolve 函數以完成 Promise
-                    if (pendingAudioResolveRef.current) {
-                      pendingAudioResolveRef.current()
-                      pendingAudioResolveRef.current = null
-                    }
-                  }}
-                  className="px-6 py-3 md:px-8 md:py-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm md:text-base"
-                >
-                  取消 / Cancel
-              </button>
-              <button
-                  onClick={confirmAudioPlay}
-                  className="px-6 py-3 md:px-8 md:py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm md:text-base"
-                >
-                  確定 / OK
-              </button>
+              {pendingAudioUrl ? (
+                <>
+                  <button
+                    onClick={() => {
+                        setShowAudioModal(false)
+                        setPendingAudioUrl(null)
+                        setPendingAudioText('')
+                        // 如果用戶取消，也要重置音頻狀態
+                        setIsSpeaking(false)
+                        setCurrentSubtitle('')
+                        // 調用 resolve 函數以完成 Promise
+                        if (pendingAudioResolveRef.current) {
+                          pendingAudioResolveRef.current()
+                          pendingAudioResolveRef.current = null
+                        }
+                      }}
+                      className="px-6 py-3 md:px-8 md:py-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm md:text-base"
+                    >
+                      取消 / Cancel
+                  </button>
+                  <button
+                      onClick={confirmAudioPlay}
+                      className="px-6 py-3 md:px-8 md:py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm md:text-base"
+                    >
+                      確定 / OK
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                      setShowAudioModal(false)
+                      setPendingAudioUrl(null)
+                      setPendingAudioText('')
+                    }}
+                    className="px-6 py-3 md:px-8 md:py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm md:text-base"
+                  >
+                    確定 / OK
+                </button>
+              )}
             </div>
               </div>
             </div>
