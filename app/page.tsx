@@ -1064,8 +1064,10 @@ export default function Home() {
                         PITCH
                       </h1>
                       <p className="text-xl md:text-2xl lg:text-3xl text-white/50 uppercase tracking-wide">
-                        COACH (建議使用電腦瀏覽器 recommend to use computer browser)
+                        COACH
                       </p>
+                      <p className="text-sm md:text-base text-white/60 uppercase tracking-wide">
+                      (建議使用電腦瀏覽器 recommend to use computer browser)</p>
                     </div>
 
                     {/* Dot Pattern Visualization */}
