@@ -295,10 +295,17 @@ export default function Home() {
       }
       setMessages(prev => [...prev, userMessage])
 
-      // 添加助理回覆
+      // --- 修正開始：避免 AI 講話兩次 ---
+      // 判斷是否即將進入自動觸發 AI 提問的階段
+      const shouldSuppressCurrentReply = nextStage === 'qa-improve' || nextStage === 'confirm-summary'
+
+      // 訊息內容：如果壓制，使用一個過渡提示；否則使用實際回覆
+      const assistantContent = shouldSuppressCurrentReply ? '系統正在進入下一階段：追問細節...' : reply
+
+      // 添加助理回覆到歷史紀錄
       const assistantMessage: Message = {
         role: 'assistant',
-        content: reply,
+        content: assistantContent,
         timestamp: new Date(),
       }
       setMessages(prev => [...prev, assistantMessage])
@@ -306,10 +313,11 @@ export default function Home() {
       // 更新階段
       if (nextStage) {
         setCurrentStageWithLanguage(nextStage)
-        
+
         // 自動觸發下一階段的 AI 回應
-        if (nextStage === 'qa-improve' || nextStage === 'confirm-summary') {
-          setTimeout(() => triggerStageAction(nextStage), 500)
+        if (shouldSuppressCurrentReply) { // 僅在壓制了當前語音時，才自動觸發下一階段的引導語
+          // 使用一個短延遲，確保 state 已更新，然後觸發下一階段的 AI 講話 (AI 語音 2)
+          setTimeout(() => triggerStageAction(nextStage), 50) 
         }
       }
 
@@ -324,7 +332,8 @@ export default function Home() {
       }
 
       // 播放語音回覆並顯示字幕
-      if (audioUrl) {
+      // 僅在沒有壓制的情況下播放當前的 audioUrl (AI 語音 1)，否則等待自動觸發的 AI 語音 2
+      if (audioUrl && !shouldSuppressCurrentReply) { 
         // 將用戶的文字和 AI 的回應都添加到歷史記錄中
         if (transcription) {
           setSubtitleHistory(prev => [...prev, transcription])
@@ -332,6 +341,7 @@ export default function Home() {
         setSubtitleHistory(prev => [...prev, reply])
         await playAudioWithSubtitles(audioUrl, reply)
       }
+      // --- 修正結束 ---
     } catch (error) {
       console.error('處理音訊時發生錯誤:', error)
       setPendingAudioUrl('')
@@ -1438,15 +1448,34 @@ export default function Home() {
               {/* View Notes Step */}
               {currentStage === 'keywords' && (
                 <div className="flex-1 flex flex-col justify-between">
-                  <div className="flex-1 overflow-y-auto space-y-3">
-                    {messages.length > 0 && messages[messages.length - 1]?.content && (
-                      <div className="p-4 bg-black/10 rounded-2xl">
-                        <p className="text-sm md:text-base text-black whitespace-pre-wrap">
-                          {messages[messages.length - 1].content}
-                        </p>
-            </div>
-          )}
-        </div>
+                  {isProcessing ? (
+                    // 顯示 Thinking... 動畫
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center">
+                        <motion.div
+                          className="w-32 h-32 md:w-40 md:h-40 border-4 border-black rounded-full border-t-transparent"
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 0.8,
+                            repeat: Infinity,
+                            ease: [0.4, 0, 0.2, 1],
+                          }}
+                        />
+                        <p className="text-sm md:text-base text-black/60 mt-4 uppercase tracking-wide">Thinking...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    // 顯示內容
+                    <div className="flex-1 overflow-y-auto space-y-3">
+                      {messages.length > 0 && messages[messages.length - 1]?.content && (
+                        <div className="p-4 bg-black/10 rounded-2xl">
+                          <p className="text-sm md:text-base text-black whitespace-pre-wrap">
+                            {messages[messages.length - 1].content}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3 mt-4">
               <button
