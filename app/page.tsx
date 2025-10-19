@@ -1668,6 +1668,13 @@ export default function Home() {
                   ) : (
                     // 顯示內容
                     <div className="flex-1 overflow-y-auto space-y-3">
+                      {/* Pitch 小抄生成提示 */}
+                      <div className="p-4 bg-blue-100 border border-blue-200 rounded-2xl">
+                        <p className="text-sm md:text-base text-blue-800 text-center">
+                          Pitch 小抄生成中請稍候 / Generating Pitch Cheat Sheet, please wait...
+                        </p>
+                      </div>
+                      
                       {messages.length > 0 && messages[messages.length - 1]?.content && (
                         <div className="p-4 bg-black/10 rounded-2xl">
                           <p className="text-sm md:text-base text-black whitespace-pre-wrap">
