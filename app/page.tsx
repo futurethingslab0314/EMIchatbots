@@ -722,7 +722,7 @@ export default function Home() {
   // 處理確認階段按鈕（兩個選項）
   const handleConfirmStageButton = async (action: 'confirm' | 'redescribe') => {
     if (action === 'confirm') {
-      // 確認生成 3 mins pitch → 立刻進入 Step 6 (practice-pitch)
+      // 確認生成 3 mins pitch → 立刻進入 Step 5 (practice-pitch)
       setCurrentStageWithLanguage('practice-pitch')
       // 觸發 AI 生成 pitch
       await triggerStageAction('generate-pitch')
@@ -796,7 +796,7 @@ export default function Home() {
       
       
       case 'evaluation':
-        console.log('🔄 Step 7 → Step 8: 停止音頻並生成關鍵字提點')
+        console.log('🔄 Step 6 → Step 7: 停止音頻並生成關鍵字提點')
         // 停止音頻播放
         stopAudioPlayback()
         // 生成關鍵字提點
@@ -948,9 +948,9 @@ export default function Home() {
       'qa-improve': 3,
       'confirm-summary': 4,
       'generate-pitch': 5,
-      'practice-pitch': 6,
-      'evaluation': 7,
-      'keywords': 8,
+      'practice-pitch': 5,
+      'evaluation': 6,
+      'keywords': 7,
     }
     return stepMap[currentStage]
   }
@@ -1049,7 +1049,7 @@ export default function Home() {
                       {getStepTitle()}
           </h1>
                     <p className="text-sm md:text-base text-black/60">
-                      Step {getStepNumber()}/8
+                      Step {getStepNumber()}/7
           </p>
         </div>
               </div>
@@ -1699,7 +1699,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => {
-                        console.log('🔄 Step 8 → Practice: 停止音頻並進入練習')
+                        console.log('🔄 Step 7 → Practice: 停止音頻並進入練習')
                         // 停止音頻播放
                         stopAudioPlayback()
                         setCurrentStageWithLanguage('practice-pitch')
@@ -1711,7 +1711,7 @@ export default function Home() {
               </button>
               <button
                       onClick={() => {
-                        console.log('🔄 Step 8 → Restart: 停止音頻並重新開始')
+                        console.log('🔄 Step 7 → Restart: 停止音頻並重新開始')
                         // 停止音頻播放
                         stopAudioPlayback()
                         // 重新來過 - 重置所有狀態並回到上傳階段
