@@ -687,8 +687,8 @@ export default function Home() {
         extractScoresFromResponse(reply)
       }
 
-      // 播放語音
-      if (audioUrl) {
+      // 播放語音（keywords 階段不播放音頻）
+      if (audioUrl && stage !== 'keywords') {
         // 將新的字幕添加到歷史記錄中
         setSubtitleHistory(prev => [...prev, reply])
         await playAudioWithSubtitles(audioUrl, reply)
