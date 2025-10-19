@@ -365,6 +365,9 @@ export default function Home() {
     setPendingAudioUrl(audioUrl)
     setPendingAudioText(text)
     pendingAudioResolveRef.current = resolve || null
+    // 重置處理狀態，讓用戶可以進行下一步操作
+    setIsProcessing(false)
+    setIsSpeaking(false)
     setShowAudioModal(true)
   }
 
@@ -465,6 +468,11 @@ export default function Home() {
               console.error('❌ 播放音頻失敗:', error.name, error.message)
               if (error.name === 'NotAllowedError') {
                 console.warn('⚠️ 音頻播放被阻擋，需要用戶交互')
+                // 重置處理狀態，讓用戶可以進行下一步操作
+                setIsProcessing(false)
+                setIsSpeaking(false)
+                setCurrentSubtitle('')
+                
                 // 如果已經有音訊權限，直接顯示確認對話框
                 if (audioPermissionsGranted) {
                   handleAudioPlayRequest(audioUrl, text, resolve)
