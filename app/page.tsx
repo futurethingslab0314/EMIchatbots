@@ -687,8 +687,8 @@ export default function Home() {
         extractScoresFromResponse(reply)
       }
 
-      // 播放語音（keywords 階段不播放音頻）
-      if (audioUrl && stage !== 'keywords') {
+      // 播放語音（evaluation 和 keywords 階段不播放音頻）
+      if (audioUrl && stage !== 'evaluation' && stage !== 'keywords') {
         // 將新的字幕添加到歷史記錄中
         setSubtitleHistory(prev => [...prev, reply])
         await playAudioWithSubtitles(audioUrl, reply)
@@ -1677,14 +1677,12 @@ export default function Home() {
                   ) : (
                       // 顯示內容
                       <div className="flex-1 overflow-y-auto space-y-3">
-                        {/* Pitch 小抄生成提示 - 只在沒有內容時顯示 */}
-                        {(!messages.length || !messages[messages.length - 1]?.content) && (
-                          <div className="p-4 bg-blue-100 border border-blue-200 rounded-2xl">
-                            <p className="text-sm md:text-base text-blue-800 text-center">
-                              Pitch 小抄生成中請稍候 / Generating Pitch Cheat Sheet, please wait...
-                            </p>
-                          </div>
-                        )}
+                        {/* Pitch 小抄生成提示 */}
+                        <div className="p-4 bg-blue-100 border border-blue-200 rounded-2xl">
+                          <p className="text-sm md:text-base text-blue-800 text-center">
+                            Pitch 小抄生成需要一點時間，請稍待 / Generating Pitch Cheat Sheet, please wait...
+                          </p>
+                        </div>
                         
                         {messages.length > 0 && messages[messages.length - 1]?.content && (
                           <div className="p-4 bg-black/10 rounded-2xl">
@@ -1701,7 +1699,7 @@ export default function Home() {
                 onClick={() => {
                   navigator.clipboard.writeText(messages[messages.length - 1]?.content || '')
                         setPendingAudioUrl('')
-                        setPendingAudioText('✅ 已複製到剪貼簿！')
+                        setPendingAudioText('已複製到剪貼簿 / Copied to clipboard!')
                         setShowAudioModal(true)
                 }}
                       className="py-3 md:py-4 bg-black/10 text-black rounded-full uppercase tracking-wide text-sm md:text-base"
