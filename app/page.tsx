@@ -1074,11 +1074,6 @@ export default function Home() {
                       <p className="text-xl md:text-2xl lg:text-3xl text-white/50 uppercase tracking-wide">
                         COACH
                       </p>
-                      <p className="text-sm md:text-base text-white/60 uppercase tracking-wide">
-                      (請使用電腦瀏覽器） 
-                      <br /> 
-                      (Use computer browser)
-                      </p>
                     </div>
 
                     {/* Dot Pattern Visualization */}
