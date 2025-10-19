@@ -1749,27 +1749,22 @@ export default function Home() {
 
       {/* 音頻播放確認模態對話框 */}
       {showAudioModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 md:p-8">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md md:max-w-lg w-full p-6 md:p-8">
-            <div className="text-center">
-              <div className="mb-4">
-                <svg className="w-16 h-16 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                </svg>
-              </div>
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 md:p-8">
+            <div className="bg-black rounded-none shadow-2xl max-w-md md:max-w-lg w-full p-8 md:p-12 border border-black/10">
+             <div className="text-center">
 
-              <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
+              <h3 className="text-white mb-6 tracking-wide text-2xl md:text-3xl">
                 {pendingAudioUrl ? '音頻播放確認 / Audio Playback Confirmation' : '通知 / Notification'}
               </h3>
               
-              <p className="text-gray-600 mb-6 leading-relaxed text-sm md:text-base whitespace-pre-wrap">
+              <p className="text-white/90 mb-8 leading-relaxed whitespace-pre-wrap">
                 {pendingAudioUrl 
                   ? '請點擊「確定」以播放語音回覆 / Please click "OK" to play audio'
                   : pendingAudioText || '發生錯誤，請稍後再試'
                 }
               </p>
               
-              <div className="flex space-x-4 justify-center">
+              <div className="flex flex-col space-y-3 w-full">
               {pendingAudioUrl ? (
                 <>
                   <button
@@ -1786,14 +1781,12 @@ export default function Home() {
                           pendingAudioResolveRef.current = null
                         }
                       }}
-                      className="px-6 py-3 md:px-8 md:py-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm md:text-base"
-                    >
+                      className="w-full py-4 bg-white text-black rounded-none hover:bg-white/90 transition-colors tracking-widest text-center"                    >
                       取消 / Cancel
                   </button>
                   <button
                       onClick={confirmAudioPlay}
-                      className="px-6 py-3 md:px-8 md:py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm md:text-base"
-                    >
+                      className="w-full py-4 bg-transparent text-white border border-white/30 rounded-none hover:bg-white/10 transition-colors tracking-widest text-center"                    >
                       確定 / OK
                   </button>
                 </>
@@ -1804,8 +1797,7 @@ export default function Home() {
                       setPendingAudioUrl(null)
                       setPendingAudioText('')
                     }}
-                    className="px-6 py-3 md:px-8 md:py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm md:text-base"
-                  >
+                    className="w-full py-4 bg-transparent text-white border border-white/30 rounded-none hover:bg-white/10 transition-colors tracking-widest text-center"                  >
                     確定 / OK
                 </button>
               )}
