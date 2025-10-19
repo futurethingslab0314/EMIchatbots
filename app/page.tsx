@@ -699,6 +699,11 @@ export default function Home() {
         setIsSpeaking(false)
         setIsProcessing(false)
       }
+      
+      // 針對 keywords 階段，在 AI 回應完成後重置 isProcessing
+      if (stage === 'keywords') {
+        setIsProcessing(false)
+      }
     } catch (error: any) {
       console.error('觸發階段動作時發生錯誤:', error)
       
@@ -715,7 +720,11 @@ export default function Home() {
       setPendingAudioText(errorMessage)
       setShowAudioModal(true)
     } finally {
-      setIsProcessing(false)
+      // 只有在非 keywords 階段時才重置 isProcessing
+      // keywords 階段的 isProcessing 狀態由 processAudio 函數管理
+      if (stage !== 'keywords') {
+        setIsProcessing(false)
+      }
     }
   }
 
